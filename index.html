@@ -1,0 +1,2905 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Misi Agen Digital 3D — Game Edukasi AI</title>
+  <style>
+    :root {
+      --bg-deep: #060d1a;
+      --bg-card: #ffffff;
+      --primary-blue: #0284c7;
+      --primary-blue-dark: #0369a1;
+      --primary-teal: #0d9488;
+      --tech-cyan: #06b6d4;
+      --tech-cyan-glow: #67e8f9;
+      --accent-yellow: #fbbf24;
+      --accent-orange: #f97316;
+      --accent-orange-dark: #c2410c;
+      --text-dark: #0f172a;
+      --text-muted: #475569;
+      --text-light: #f8fafc;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Latar Belakang Grid 3D Bergerak */
+    .cyber-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 15%, #12355b 0%, #050c18 85%);
+      perspective: 600px;
+    }
+
+    .cyber-grid-3d {
+      position: absolute;
+      width: 200%;
+      height: 130%;
+      left: -50%;
+      bottom: -35%;
+      background-image: 
+        linear-gradient(to right, rgba(6, 182, 212, 0.2) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(6, 182, 212, 0.2) 1px, transparent 1px);
+      background-size: 45px 45px;
+      transform: rotateX(68deg);
+      animation: moveGrid3D 4s linear infinite;
+    }
+
+    @keyframes moveGrid3D {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 45px; }
+    }
+
+    /* Kanvas Partikel Konfeti & Bintang */
+    #fx-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Kontainer Utama Responsif (Mobile-First) */
+    #game-app {
+      width: 100%;
+      max-width: 680px;
+      min-height: 100vh;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 28px;
+    }
+
+    @media (min-width: 700px) {
+      body {
+        align-items: center;
+        padding: 16px;
+      }
+      #game-app {
+        min-height: 680px;
+        background: rgba(11, 25, 44, 0.85);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(103, 232, 249, 0.35);
+        border-radius: 28px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(6, 182, 212, 0.2);
+        overflow: hidden;
+      }
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: rgba(6, 15, 30, 0.92);
+      border-bottom: 2px solid rgba(6, 182, 212, 0.35);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(8px);
+      gap: 8px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 900;
+      font-size: 0.9rem;
+      color: var(--tech-cyan-glow);
+      text-shadow: 0 2px 6px rgba(6, 182, 212, 0.5);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .agent-pill {
+      background: linear-gradient(135deg, #0d9488, #0284c7);
+      border: 1.5px solid var(--tech-cyan-glow);
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 3px 0 #065f46;
+      max-width: 115px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .audio-btn {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1.5px solid var(--tech-cyan);
+      border-radius: 10px;
+      padding: 5px 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #0f172a;
+      transition: transform 0.1s;
+    }
+
+    .audio-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #0f172a;
+    }
+
+    /* Transisi Layar 3D */
+    .screen {
+      display: none;
+      flex: 1;
+      padding: 14px;
+      flex-direction: column;
+      gap: 14px;
+      transform-style: preserve-3d;
+    }
+
+    .screen.active {
+      display: flex;
+      animation: screenEnter3D 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes screenEnter3D {
+      0% {
+        opacity: 0;
+        transform: perspective(800px) rotateX(-8deg) translateY(16px) scale(0.96);
+      }
+      100% {
+        opacity: 1;
+        transform: perspective(800px) rotateX(0deg) translateY(0) scale(1);
+      }
+    }
+
+    /* Tombol 3D Arcade Taktil */
+    .btn-3d {
+      border: none;
+      border-radius: 16px;
+      padding: 13px 20px;
+      font-size: 0.96rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+      position: relative;
+      transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease, filter 0.15s ease;
+      user-select: none;
+      width: 100%;
+    }
+
+    .btn-3d:hover:not(:disabled) {
+      filter: brightness(1.07);
+      transform: translateY(-2px);
+    }
+
+    .btn-3d:active:not(:disabled) {
+      transform: translateY(4px) !important;
+    }
+
+    .btn-3d:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      filter: grayscale(0.4);
+    }
+
+    .btn-orange {
+      background: linear-gradient(180deg, #fbbf24 0%, #f97316 100%);
+      color: #0f172a;
+      box-shadow: 0 6px 0 var(--accent-orange-dark), 0 10px 18px rgba(249, 115, 22, 0.35);
+      border: 2px solid #fde047;
+    }
+    .btn-orange:active:not(:disabled) {
+      box-shadow: 0 2px 0 var(--accent-orange-dark);
+    }
+
+    .btn-cyan {
+      background: linear-gradient(180deg, #22d3ee 0%, #0284c7 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 0 #0c4a6e, 0 10px 18px rgba(6, 182, 212, 0.35);
+      border: 2px solid #a5f3fc;
+    }
+    .btn-cyan:active:not(:disabled) {
+      box-shadow: 0 2px 0 #0c4a6e;
+    }
+
+    .btn-ghost {
+      background: rgba(30, 41, 59, 0.9);
+      color: #e2e8f0;
+      border: 2px solid rgba(103, 232, 249, 0.45);
+      box-shadow: 0 5px 0 #0f172a;
+    }
+    .btn-ghost:active:not(:disabled) {
+      box-shadow: 0 1px 0 #0f172a;
+    }
+
+    /* Kotak Dialog Kiko 3D Interaktif */
+    .kiko-stage {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.32), rgba(2, 132, 199, 0.32));
+      border: 2px solid rgba(103, 232, 249, 0.55);
+      border-radius: 20px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 0 rgba(6, 78, 59, 0.6), 0 12px 24px rgba(0, 0, 0, 0.35);
+      position: relative;
+    }
+
+    .kiko-3d-wrap {
+      width: 64px;
+      height: 64px;
+      flex-shrink: 0;
+      animation: kikoFloat3D 2.6s ease-in-out infinite;
+      filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45));
+    }
+
+    @keyframes kikoFloat3D {
+      0%, 100% { transform: translateY(0px) rotate(-2deg); }
+      50% { transform: translateY(-7px) rotate(3deg); }
+    }
+
+    .kiko-eye-blink {
+      transform-origin: center;
+      animation: blinkEyes 4s infinite;
+    }
+
+    @keyframes blinkEyes {
+      0%, 94%, 98%, 100% { transform: scaleY(1); }
+      96% { transform: scaleY(0.1); }
+    }
+
+    .kiko-bubble {
+      flex: 1;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: #f8fafc;
+    }
+
+    .kiko-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--tech-cyan-glow);
+      color: #06152d;
+      font-weight: 900;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* Kartu 3D Putih */
+    .card-3d {
+      background: var(--bg-card);
+      color: var(--text-dark);
+      border-radius: 22px;
+      padding: 18px;
+      border: 3px solid #bae6fd;
+      box-shadow: 0 8px 0 #64748b, 0 14px 28px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Layar Pembuka */
+    .hero-3d-box {
+      width: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 3px solid var(--tech-cyan);
+      box-shadow: 0 8px 0 #0e7490, 0 12px 24px rgba(0, 0, 0, 0.5);
+      background: #071930;
+      position: relative;
+    }
+
+    .input-3d {
+      width: 100%;
+      padding: 13px 16px;
+      border: 2.5px solid #94a3b8;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      background: #f8fafc;
+      box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.08);
+      outline: none;
+    }
+
+    .input-3d:focus {
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.2);
+    }
+
+    /* Peta Petualangan 3D */
+    .map-board-3d {
+      background: radial-gradient(circle at 50% 30%, #153c68 0%, #08182e 100%);
+      border: 3px solid var(--tech-cyan);
+      border-radius: 24px;
+      padding: 16px 12px;
+      box-shadow: 0 10px 0 #0c4a6e, 0 16px 32px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-path-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      position: relative;
+      z-index: 2;
+      margin-top: 10px;
+    }
+
+    @media (min-width: 560px) {
+      .map-path-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+    }
+
+    .building-node-3d {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 2.5px solid #475569;
+      border-radius: 18px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      box-shadow: 0 7px 0 #090d16, 0 10px 18px rgba(0, 0, 0, 0.45);
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+      user-select: none;
+    }
+
+    .building-node-3d:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #090d16;
+    }
+
+    .building-node-3d.locked {
+      opacity: 0.68;
+      filter: grayscale(0.55);
+    }
+
+    .building-node-3d.active {
+      background: linear-gradient(180deg, #0369a1 0%, #0f172a 100%);
+      border-color: var(--accent-yellow);
+      box-shadow: 0 7px 0 #b45309, 0 0 22px rgba(251, 191, 36, 0.6);
+      animation: nodeBounce3D 2s ease-in-out infinite;
+    }
+
+    @keyframes nodeBounce3D {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .building-node-3d.completed {
+      background: linear-gradient(180deg, #065f46 0%, #064e3b 100%);
+      border-color: #34d399;
+      box-shadow: 0 7px 0 #022c22, 0 8px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    .node-icon-3d {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.25);
+    }
+
+    .status-tag {
+      font-size: 0.66rem;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+
+    .tag-locked { background: #334155; color: #cbd5e1; }
+    .tag-active { background: var(--accent-yellow); color: #0f172a; }
+    .tag-done { background: #10b981; color: #022c22; }
+
+    /* Modal Pop-up Kartu Misi */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 12, 24, 0.82);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card-3d {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      color: var(--text-dark);
+      border-radius: 24px;
+      border: 4px solid var(--tech-cyan);
+      box-shadow: 0 10px 0 #0e7490, 0 24px 48px rgba(0, 0, 0, 0.65);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: popModal3D 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popModal3D {
+      0% { transform: scale(0.82) translateY(24px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+
+    /* Komik 3 Panel Responsif HP */
+    .comic-stack {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 600px) {
+      .comic-stack {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .comic-card-3d {
+      background: #ffffff;
+      color: var(--text-dark);
+      border-radius: 18px;
+      border: 3px solid var(--tech-cyan);
+      box-shadow: 0 6px 0 #0284c7;
+      overflow: hidden;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    }
+
+    @media (min-width: 600px) {
+      .comic-card-3d {
+        flex-direction: column;
+      }
+    }
+
+    .comic-visual {
+      width: 100px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      border-right: 2px solid #bae6fd;
+    }
+
+    @media (min-width: 600px) {
+      .comic-visual {
+        width: 100%;
+        height: 105px;
+        border-right: none;
+        border-bottom: 2px solid #bae6fd;
+      }
+    }
+
+    .comic-body {
+      padding: 10px 12px;
+      font-size: 0.86rem;
+      line-height: 1.42;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex: 1;
+    }
+
+    /* Layar Soal & Opsi Jawaban 3D */
+    .quiz-top-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.92);
+      padding: 10px 14px;
+      border-radius: 16px;
+      border: 2px solid rgba(103, 232, 249, 0.35);
+      box-shadow: 0 5px 0 #090d16;
+    }
+
+    .pill-progress {
+      background: var(--tech-cyan-glow);
+      color: #06152d;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.78rem;
+    }
+
+    .option-3d {
+      background: #f8fafc;
+      border: 2.5px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 5px 0 #cbd5e1;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+      width: 100%;
+    }
+
+    .option-3d:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #93c5fd;
+    }
+
+    .option-3d.selected {
+      border-color: var(--accent-orange);
+      background: #fff7ed;
+      box-shadow: 0 5px 0 var(--accent-orange);
+    }
+
+    .option-3d.correct-ans {
+      border-color: var(--success);
+      background: #ecfdf5;
+      color: #065f46;
+      box-shadow: 0 5px 0 var(--success);
+    }
+
+    .option-3d.wrong-ans {
+      border-color: var(--danger);
+      background: #fef2f2;
+      color: #991b1b;
+      box-shadow: 0 5px 0 var(--danger);
+    }
+
+    .opt-badge-3d {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #e2e8f0;
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.92rem;
+      flex-shrink: 0;
+      box-shadow: 0 3px 0 #94a3b8;
+    }
+
+    .option-3d.selected .opt-badge-3d {
+      background: var(--accent-orange);
+      color: #fff;
+      box-shadow: 0 3px 0 var(--accent-orange-dark);
+    }
+
+    /* Item Urutkan Langkah */
+    .order-card-3d {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #f8fafc;
+      border: 2.5px solid #94a3b8;
+      border-radius: 16px;
+      padding: 10px 12px;
+      box-shadow: 0 5px 0 #cbd5e1;
+    }
+
+    .order-btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .btn-step-move {
+      background: linear-gradient(180deg, #38bdf8, #0284c7);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      width: 38px;
+      height: 32px;
+      font-size: 0.92rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #0369a1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-step-move:disabled {
+      background: #cbd5e1;
+      color: #64748b;
+      box-shadow: none;
+      opacity: 0.5;
+    }
+
+    /* Panel Umpan Balik */
+    .feedback-3d {
+      border-radius: 18px;
+      padding: 15px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      border: 3px solid transparent;
+    }
+
+    .feedback-3d.show {
+      display: flex;
+    }
+
+    .feedback-3d.success {
+      background: #ecfdf5;
+      border-color: var(--success);
+      color: #064e3b;
+      box-shadow: 0 6px 0 #10b981;
+    }
+
+    .feedback-3d.warning {
+      background: #fffbeb;
+      border-color: var(--accent-yellow);
+      color: #78350f;
+      box-shadow: 0 6px 0 #f59e0b;
+    }
+
+    .feedback-3d.error {
+      background: #fef2f2;
+      border-color: var(--danger);
+      color: #7f1d1d;
+      box-shadow: 0 6px 0 #ef4444;
+    }
+
+    @keyframes shake3D {
+      0%, 100% { transform: translateX(0) rotate(0); }
+      20%, 60% { transform: translateX(-8px) rotate(-1.2deg); }
+      40%, 80% { transform: translateX(8px) rotate(1.2deg); }
+    }
+
+    @keyframes celebratePop {
+      0% { transform: scale(0.94); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    .shake-anim { animation: shake3D 0.4s ease-in-out; }
+    .pop-anim { animation: celebratePop 0.35s ease-out; }
+
+    /* Layar Papan Prestasi Akhir */
+    .trophy-hero-3d {
+      background: linear-gradient(155deg, #1e3a8a 0%, #091526 100%);
+      border: 3px solid var(--accent-yellow);
+      border-radius: 22px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 8px 0 #b45309, 0 15px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-giant {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--accent-yellow);
+      text-shadow: 0 4px 0 #b45309, 0 0 20px rgba(251, 191, 36, 0.5);
+      line-height: 1;
+    }
+
+    .summary-grid-mobile {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 540px) {
+      .summary-grid-mobile {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .summary-row-3d {
+      background: #f8fafc;
+      border: 2px solid #cbd5e1;
+      border-left: 6px solid var(--primary-teal);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 0 #e2e8f0;
+    }
+
+    /* Kotak Sinkronisasi Google Sheets & Kunci Nilai */
+    .sync-panel-3d {
+      background: rgba(15, 23, 42, 0.95);
+      border: 2.5px dashed #38bdf8;
+      border-radius: 18px;
+      padding: 14px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 6px 0 #090d16;
+    }
+
+    .sync-status-pill {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.82rem;
+    }
+
+    .sync-pending { background: #fef3c7; color: #92400e; border: 1.5px solid #f59e0b; }
+    .sync-success { background: #ecfdf5; color: #065f46; border: 1.5px solid #10b981; }
+  </style>
+</head>
+<body>
+
+<div class="cyber-bg">
+  <div class="cyber-grid-3d"></div>
+</div>
+
+<canvas id="fx-canvas"></canvas>
+
+<div id="game-app">
+  <!-- HEADER NAVIGASI (Ketuk judul 5x untuk Reset Rahasia Guru) -->
+  <header class="top-bar">
+    <div class="brand-title" onclick="handleSecretTeacherTap()">
+      <span>🛡️ MISI AGEN DIGITAL</span>
+    </div>
+    <div class="top-controls">
+      <div id="agent-chip" class="agent-pill" style="display:none;">
+        👤 <span id="agent-name-top">-</span>
+      </div>
+      <button id="btn-bgm" class="audio-btn" onclick="toggleBGM()">🎵 Musik: Mati</button>
+      <button id="btn-sfx" class="audio-btn" onclick="toggleSFX()">🔊 SFX: Aktif</button>
+    </div>
+  </header>
+
+  <!-- 1. LAYAR PEMBUKA -->
+  <section id="screen-opening" class="screen active">
+    <div class="hero-3d-box">
+      <svg viewBox="0 0 680 220" width="100%" height="auto" style="display:block;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bgSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#041022"/>
+            <stop offset="100%" stop-color="#0d3b66"/>
+          </linearGradient>
+          <linearGradient id="neonArch" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#06b6d4"/>
+            <stop offset="50%" stop-color="#fde047"/>
+            <stop offset="100%" stop-color="#10b981"/>
+          </linearGradient>
+        </defs>
+        <rect width="680" height="220" fill="url(#bgSky)"/>
+        <circle cx="80" cy="35" r="2" fill="#fff"/>
+        <circle cx="190" cy="25" r="2.5" fill="#67e8f9"/>
+        <circle cx="510" cy="30" r="2" fill="#fde047"/>
+        <circle cx="610" cy="45" r="2.5" fill="#fff"/>
+        <rect x="25" y="65" width="65" height="155" rx="4" fill="#0b2545" stroke="#06b6d4" stroke-width="1.5"/>
+        <rect x="100" y="45" width="75" height="175" rx="4" fill="#133c67" stroke="#22d3ee" stroke-width="1.5"/>
+        <rect x="505" y="48" width="75" height="172" rx="4" fill="#133c67" stroke="#22d3ee" stroke-width="1.5"/>
+        <rect x="590" y="70" width="65" height="150" rx="4" fill="#0b2545" stroke="#06b6d4" stroke-width="1.5"/>
+        <path d="M 195 220 L 195 55 Q 340 8 485 55 L 485 220" fill="none" stroke="url(#neonArch)" stroke-width="9"/>
+        <rect x="225" y="22" width="230" height="34" rx="10" fill="#06152d" stroke="#fde047" stroke-width="2.5"/>
+        <text x="340" y="44" fill="#67e8f9" font-size="14" font-weight="900" text-anchor="middle" letter-spacing="1.2">GERBANG KOTA DIGITAL</text>
+        <g transform="translate(265, 92)">
+          <circle cx="30" cy="28" r="19" fill="#facc15"/>
+          <circle cx="30" cy="31" r="15" fill="#fed7aa"/>
+          <circle cx="25" cy="29" r="2.5" fill="#0f172a"/>
+          <circle cx="35" cy="29" r="2.5" fill="#0f172a"/>
+          <path d="M 25 36 Q 30 41 35 36" stroke="#0f172a" stroke-width="2" fill="none"/>
+          <rect x="12" y="48" width="36" height="58" rx="10" fill="#0d9488" stroke="#67e8f9" stroke-width="2"/>
+          <circle cx="30" cy="68" r="8" fill="#fbbf24"/>
+          <text x="30" y="71" fill="#0f172a" font-size="8" font-weight="900" text-anchor="middle">AI</text>
+        </g>
+        <g transform="translate(355, 96)">
+          <circle cx="30" cy="26" r="18" fill="#1e293b"/>
+          <circle cx="30" cy="30" r="15" fill="#fed7aa"/>
+          <circle cx="25" cy="28" r="2.5" fill="#0f172a"/>
+          <circle cx="35" cy="28" r="2.5" fill="#0f172a"/>
+          <path d="M 25 35 Q 30 40 35 35" stroke="#0f172a" stroke-width="2" fill="none"/>
+          <rect x="13" y="46" width="34" height="56" rx="10" fill="#0284c7" stroke="#67e8f9" stroke-width="2"/>
+          <circle cx="30" cy="66" r="8" fill="#fbbf24"/>
+          <text x="30" y="69" fill="#0f172a" font-size="8" font-weight="900" text-anchor="middle">AI</text>
+        </g>
+        <g transform="translate(198, 120)">
+          <line x1="28" y1="0" x2="28" y2="12" stroke="#67e8f9" stroke-width="3"/>
+          <circle cx="28" cy="0" r="5" fill="#fbbf24"/>
+          <rect x="8" y="12" width="40" height="32" rx="10" fill="#f8fafc" stroke="#06b6d4" stroke-width="2.5"/>
+          <rect x="14" y="18" width="28" height="16" rx="5" fill="#091526"/>
+          <circle cx="22" cy="26" r="3.5" fill="#22d3ee"/>
+          <circle cx="34" cy="26" r="3.5" fill="#22d3ee"/>
+          <rect x="13" y="46" width="30" height="24" rx="7" fill="#0d9488" stroke="#67e8f9" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="kiko-stage">
+      <div class="kiko-3d-wrap" id="kiko-open-avatar"></div>
+      <div class="kiko-bubble">
+        <span class="kiko-badge">🤖 Kiko — Robot Pendamping</span>
+        <p id="kiko-open-speech"></p>
+      </div>
+    </div>
+
+    <div class="card-3d" id="open-form-card">
+      <div>
+        <h2 style="font-size:1.15rem; color:#0f172a; font-weight:900;">🎮 Masuk sebagai Agen Digital</h2>
+        <p style="font-size:0.8rem; color:#475569; margin-top:3px;">
+          Ketik <strong>nama_kelas</strong>. Progres dan hasil percobaan pertamamu akan tersimpan otomatis di HP ini.
+        </p>
+      </div>
+
+      <div id="nickname-form-row" style="display:flex; flex-direction:column; gap:10px;">
+        <input type="text" id="input-nickname" class="input-3d" placeholder="Ketik nama panggilanmu (contoh: Raka / Kelas X)..." maxlength="22" />
+        <button class="btn-3d btn-cyan" onclick="confirmNickname()">✨ Konfirmasi Nama Agen</button>
+      </div>
+
+      <div id="start-adventure-box" style="display:none; flex-direction:column; gap:10px; padding-top:10px; border-top:2px dashed #bae6fd;">
+        <div id="greeting-banner" style="background:#ecfdf5; border:2px solid #10b981; color:#065f46; padding:10px 12px; border-radius:12px; font-weight:800; font-size:0.9rem; text-align:center;"></div>
+        <button class="btn-3d btn-orange" onclick="enterMapScreen()">🚀 Mulai Petualangan (Buka Peta 3D)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. PETA PETUALANGAN KOTA DIGITAL -->
+  <section id="screen-map" class="screen">
+    <div class="kiko-stage">
+      <div class="kiko-3d-wrap" id="kiko-map-avatar"></div>
+      <div class="kiko-bubble">
+        <span class="kiko-badge">🗺️ Pemandu Peta Kota Digital</span>
+        <p id="kiko-map-speech"></p>
+      </div>
+    </div>
+
+    <div class="map-board-3d">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+        <div style="font-weight:900; font-size:0.95rem; color:#67e8f9;">🏙️ ZONA MISI KOTA DIGITAL</div>
+        <div id="map-counter-badge" style="background:#0f172a; border:1.5px solid #38bdf8; padding:3px 10px; border-radius:99px; font-size:0.76rem; font-weight:800; color:#fde047;">
+          Misi Selesai: 0 / 5
+        </div>
+      </div>
+
+      <p style="font-size:0.78rem; color:#bae6fd; margin-bottom:10px;">
+        👆 Ketuk gedung lokasi di bawah untuk membuka <strong>Kartu Hologram Misi</strong>:
+      </p>
+
+      <div class="map-path-grid" id="map-nodes-grid"></div>
+
+      <div id="map-final-btn-wrap" style="display:none; margin-top:16px;">
+        <button class="btn-3d btn-orange" onclick="showFinalScoreboard()">🏆 Buka Papan Prestasi Akhir</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL HOLOGRAM DETAIL MISI -->
+  <div id="mission-modal" class="modal-overlay" onclick="closeMissionModal(event)">
+    <div class="modal-card-3d" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="modal-status-pill" class="status-tag tag-active">STATUS</span>
+        <button onclick="closeMissionModal()" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; font-weight:900; cursor:pointer; font-size:1rem;">✕</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div id="modal-icon-box" style="width:58px; height:58px; border-radius:16px; background:#e0f2fe; border:2px solid #0284c7; display:flex; align-items:center; justify-content:center; font-size:2rem; flex-shrink:0;">🏢</div>
+        <div>
+          <div id="modal-loc-label" style="font-size:0.74rem; font-weight:900; color:#0284c7; text-transform:uppercase;">LOKASI</div>
+          <h3 id="modal-mission-name" style="font-size:1.1rem; color:#0f172a; font-weight:900; line-height:1.25;">Nama Misi</h3>
+          <span id="modal-diff-badge" style="display:inline-block; background:#fef3c7; color:#92400e; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px; margin-top:4px;">Kesulitan</span>
+        </div>
+      </div>
+
+      <p id="modal-problem-desc" style="font-size:0.86rem; color:#334155; line-height:1.45; background:#f8fafc; padding:10px 12px; border-radius:12px; border-left:4px solid #0284c7;"></p>
+
+      <div id="modal-action-container"></div>
+    </div>
+  </div>
+
+  <!-- 3. PENGANTAR KOMIK MISI -->
+  <section id="screen-comic" class="screen">
+    <div class="quiz-top-strip">
+      <div id="comic-header-title" style="font-weight:900; font-size:0.9rem; color:#67e8f9;">📖 Komik Pengantar Misi</div>
+      <button class="audio-btn" onclick="enterMapScreen()">⬅ Peta</button>
+    </div>
+
+    <div class="comic-stack" id="comic-panels-wrap"></div>
+
+    <div class="kiko-stage">
+      <div class="kiko-3d-wrap" id="kiko-comic-avatar"></div>
+      <div class="kiko-bubble">
+        <span class="kiko-badge">🎯 Tujuan & Aturan Misi</span>
+        <p id="kiko-comic-speech"></p>
+      </div>
+    </div>
+
+    <button class="btn-3d btn-orange" onclick="startMissionQuestions()">🚀 Mulai Tantangan Misi ➔</button>
+  </section>
+
+  <!-- 4. LAYAR SOAL & MINI-GAME INTERAKTIF -->
+  <section id="screen-question" class="screen">
+    <div class="quiz-top-strip">
+      <div>
+        <div id="quiz-loc-title" style="font-weight:900; font-size:0.88rem; color:#67e8f9;">Lokasi</div>
+        <div id="quiz-minigame-sub" style="font-size:0.72rem; color:#cbd5e1; font-weight:700;">Mini-Game</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span id="quiz-attempt-pill" style="background:#1e293b; border:1px solid #facc15; color:#fde047; font-size:0.72rem; font-weight:800; padding:4px 9px; border-radius:99px;">Kesempatan: 2/2</span>
+        <span id="quiz-progress-badge" class="pill-progress">Soal 1 dari 3</span>
+      </div>
+    </div>
+
+    <div class="kiko-stage">
+      <div class="kiko-3d-wrap" id="kiko-quiz-avatar"></div>
+      <div class="kiko-bubble">
+        <span class="kiko-badge">🤖 Pendamping Misi</span>
+        <p id="kiko-quiz-speech"></p>
+      </div>
+    </div>
+
+    <div class="card-3d" id="question-main-card">
+      <div id="question-context-banner" style="display:none; background:#f0f9ff; border-left:5px solid #0284c7; padding:10px 12px; border-radius:10px; font-size:0.85rem; color:#1e293b; line-height:1.45;"></div>
+
+      <div id="question-media-frame" style="display:none; justify-content:center; align-items:center; background:#091526; padding:10px; border-radius:16px; border:2px solid #38bdf8;"></div>
+
+      <div id="question-prompt-text" style="font-size:0.98rem; font-weight:800; line-height:1.42; color:#0f172a;"></div>
+
+      <div id="interaction-container" style="display:flex; flex-direction:column; gap:10px;"></div>
+
+      <button id="btn-submit-answer" class="btn-3d btn-cyan" onclick="checkUserAnswer()" disabled>
+        🔍 Periksa Jawaban
+      </button>
+
+      <!-- Panel Umpan Balik -->
+      <div id="feedback-box" class="feedback-3d">
+        <div id="fb-title" style="font-weight:900; font-size:0.98rem;"></div>
+        <div id="fb-desc" style="font-size:0.86rem; line-height:1.45;"></div>
+        <div id="fb-hint" style="display:none; background:rgba(245, 158, 11, 0.18); border-left:4px solid #d97706; padding:9px 11px; border-radius:8px; font-weight:700; font-size:0.84rem;"></div>
+
+        <div style="display:flex; gap:10px; margin-top:4px;">
+          <button id="btn-retry-q" class="btn-3d btn-ghost" style="display:none; background:#fff; color:#0f172a; border-color:#f59e0b; box-shadow:0 5px 0 #d97706;" onclick="retryCurrentQuestion()">
+            🔄 Coba Lagi
+          </button>
+          <button id="btn-next-q" class="btn-3d btn-orange" style="display:none;" onclick="goToNextQuestion()">
+            Lanjut ➔
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. LAYAR PERAYAAN MISI SELESAI -->
+  <section id="screen-celebration" class="screen">
+    <div class="card-3d" style="text-align:center; align-items:center; padding:22px 16px;">
+      <div style="font-size:2rem;">🌟🎉🏆🎉🌟</div>
+      <div class="kiko-3d-wrap" style="width:82px; height:82px;" id="kiko-celeb-avatar"></div>
+
+      <h2 id="celeb-mission-title" style="font-size:1.3rem; color:#0f172a; font-weight:900;">Misi Selesai!</h2>
+      <p id="celeb-kiko-praise" style="font-size:0.88rem; color:#334155; line-height:1.45;"></p>
+
+      <div style="background:linear-gradient(135deg, #f0f9ff, #e0f2fe); border:3px solid #0284c7; border-radius:18px; padding:14px; width:100%; box-shadow:0 6px 0 #bae6fd;">
+        <div id="celeb-badge-emoji" style="font-size:2.4rem;">🏅</div>
+        <div id="celeb-badge-title" style="font-weight:900; font-size:1.02rem; color:#0f172a; margin-top:4px;">Nama Lencana</div>
+        <div id="celeb-badge-stats" style="font-weight:800; font-size:0.85rem; color:#0d9488; margin-top:4px;"></div>
+        <div style="font-size:0.72rem; color:#64748b; margin-top:6px;">
+          Tingkat Lencana Misi: Gold (86–100%) | Silver (60–85%) | Bronze (0–59%)
+        </div>
+      </div>
+
+      <div id="final-challenge-recap" style="display:none; text-align:left; background:#f0fdf4; border:2px solid #10b981; border-left:6px solid #059669; padding:12px 14px; border-radius:14px; width:100%; font-size:0.84rem; line-height:1.45; color:#064e3b;">
+        <strong style="display:block; margin-bottom:4px; font-size:0.9rem;">📌 Rangkuman Kasus Pusat Kendali AI:</strong>
+        Keputusan yang bijak menuntut 3 pilar utama: <strong>(1) Privasi & Keamanan Data</strong> (gunakan <em>dummy data</em>, jangan unggah data pribadi asli ke AI publik), <strong>(2) Verifikasi Kritis</strong> (periksa akurasi output AI pada pedoman resmi/guru agar terhindar dari halusinasi), serta <strong>(3) Kejujuran Akademik</strong> (transparan atas peran AI dan tetap memegang tanggung jawab penuh sebagai manusia).
+      </div>
+
+      <button id="btn-celeb-next" class="btn-3d btn-orange" onclick="handlePostCelebration()">
+        🗺️ Kembali ke Peta Kota Digital
+      </button>
+    </div>
+  </section>
+
+  <!-- 6. LAYAR PAPAN PRESTASI AKHIR (TERKUNCI PERMANEN + SINKRONISASI SHEETS) -->
+  <section id="screen-results" class="screen">
+    <div class="trophy-hero-3d">
+      <span style="background:rgba(255,255,255,0.12); padding:4px 10px; border-radius:99px; font-size:0.7rem; color:#bae6fd; font-weight:700;">
+        Evaluasi Pembelajaran dalam Game (Bukan Sertifikasi Resmi)
+      </span>
+      <div id="res-medal-icon" style="font-size:3rem; margin-top:2px;">🥇</div>
+      <div id="res-tier-title" style="font-weight:900; font-size:1.05rem; color:#67e8f9; letter-spacing:1px;">LENCANA GOLD</div>
+      <div style="font-size:0.75rem; color:#cbd5e1; font-weight:700;">SKOR AKHIR AGEN (0–100)</div>
+      <div id="res-total-score" class="score-giant">100</div>
+      <div id="res-predicate-badge" style="background:#10b981; color:#022c22; font-weight:900; padding:5px 16px; border-radius:99px; font-size:0.88rem; margin-top:2px;">
+        Predikat: Sangat Baik
+      </div>
+      <div id="res-greeting-line" style="font-size:0.85rem; color:#f8fafc; margin-top:4px;"></div>
+      <div id="res-formula-detail" style="font-size:0.72rem; color:#94a3b8;"></div>
+    </div>
+
+    <!-- PANEL PENGUNCI NILAI PERTAMA & PENGIRIMAN GOOGLE SHEETS (CARA 1) -->
+    <div class="sync-panel-3d">
+      <!-- PASTE KODE INI DI BAWAH <div class="sync-panel-3d"> ... </div> PADA LAYAR HASIL AKHIR -->
+      <div style="margin-top: 12px; text-align: center;">
+        <button class="btn-3d btn-cyan" onclick="openReplayConfirmation()">
+          🔄 Mainkan Ulang Game (Sesi Baru)
+        </button>
+        <p style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+          Nilai kamu sebelumnya sudah tersimpan di sistem guru. Mengulang akan memulai sesi dari awal.
+        </p>
+      </div>
+
+      <!-- KOTAK KONFIRMASI (POP-UP) AGAR SISWA TIDAK TERPENCET TIDAK SENGAJA -->
+      <div id="replay-confirm-modal" class="modal-overlay" onclick="closeReplayModal(event)" style="display:none;">
+        <div class="modal-card-3d" onclick="event.stopPropagation()" style="text-align: center;">
+          <h3 style="color: #0f172a; font-weight: 900;">⚠️ Konfirmasi Mainkan Ulang</h3>
+          <p style="font-size: 0.88rem; color: #334155; line-height: 1.45;">
+            Apakah kamu yakin ingin mengulang dari awal? Nilai barumu akan dikirim ulang ke guru sebagai sesi percobaan berikutnya.
+          </p>
+          <div style="display: flex; gap: 10px; margin-top: 8px;">
+            <button class="btn-3d btn-ghost" style="flex:1;" onclick="closeReplayModal()">Batal</button>
+            <button class="btn-3d btn-orange" style="flex:1;" onclick="executeHardReset()">Ya, Mulai Ulang</button>
+          </div>
+        </div>
+      </div>
+      <div style="font-weight:900; font-size:0.88rem; color:#67e8f9;">
+        🔒 HASIL PERCOBAAN PERTAMA TELAH DIKUNCI PERMANEN
+      </div>
+      <div id="audit-time-info" style="font-size:0.78rem; color:#fde047; font-weight:700;"></div>
+      <div>
+        <span id="audit-seal-code" style="font-family:monospace; background:#0284c7; color:#fff; padding:4px 10px; border-radius:8px; font-size:0.82rem; font-weight:900; letter-spacing:0.5px;"></span>
+      </div>
+
+      <!-- Status Pengiriman ke Google Sheets -->
+      <div style="margin-top:6px;">
+        <div id="sheets-status-badge" class="sync-status-pill sync-pending">
+          ⏳ Menyiapkan pengiriman nilai ke Google Sheets Guru...
+        </div>
+      </div>
+
+      <button id="btn-retry-sync" class="btn-3d btn-orange" style="display:none; margin-top:6px; padding:10px 16px; font-size:0.86rem;" onclick="syncScoreToGoogleSheets(true)">
+        📡 Kirim Nilai ke Google Sheets Guru Sekarang
+      </button>
+    </div>
+
+    <div class="card-3d">
+      <h3 style="font-size:0.98rem; font-weight:900; color:#0f172a;">📊 Ringkasan 5 Misi & Final Challenge</h3>
+      <div class="summary-grid-mobile" id="res-missions-list"></div>
+
+      <div style="background:#eff6ff; border:2px solid #93c5fd; border-radius:14px; padding:12px; font-size:0.84rem; color:#1e3a8a; line-height:1.45;">
+        <strong>💡 Refleksi Literasi & Etika AI:</strong><br/>
+        Kecerdasan Artifisial sangat membantu kita belajar dan berkarya di SMK. Namun, selalu periksa kembali kebenaran informasi AI, jaga kerahasiaan data pribadi, dan pastikan keputusan akhir tetap berada di tangan manusia yang bijak!
+      </div>
+    </div>
+
+    <div class="kiko-stage">
+      <div class="kiko-3d-wrap" id="kiko-res-avatar"></div>
+      <div class="kiko-bubble">
+        <span class="kiko-badge">🤖 Pesan Penutup Kiko</span>
+        <p id="kiko-res-speech"></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  /********************************************************************
+   * KONFIGURASI GOOGLE SHEETS GURU (CARA 1 — OFFLINE QUEUE & AUTO SYNC)
+   * Tempelkan URL Web App Google Script Anda di dalam tanda kutip di bawah:
+   ********************************************************************/
+  const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw9D0nzaVIrGpNathhsmFbENgObwPU2KSFYuAvIHEgKbh_xHoWrz7wiszcCb-AHCVUWkg/exec";
+
+  const STORAGE_KEY = "MISI_AGEN_DIGITAL_V4_SESSIONS";
+
+  /********************************************************************
+   * 1. WEB AUDIO API SOUND ENGINE (8 EFEK SUARA + BGM SYNTH LOOP)
+   ********************************************************************/
+  let sfxEnabled = true;
+  let bgmEnabled = false;
+  let audioCtx = null;
+  let bgmInterval = null;
+  let bgmStep = 0;
+
+  function ensureAudioCtx() {
+    if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playTone(freq, type, duration, delay = 0, vol = 0.14) {
+    if (!sfxEnabled) return;
+    try {
+      ensureAudioCtx();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime + delay;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
+    } catch (e) {}
+  }
+
+  function playSFX(effect) {
+    if (!sfxEnabled) return;
+    switch (effect) {
+      case 'click':
+        playTone(580, 'sine', 0.07, 0, 0.12);
+        playTone(780, 'triangle', 0.06, 0.03, 0.1);
+        break;
+      case 'select':
+        playTone(660, 'triangle', 0.08, 0, 0.12);
+        break;
+      case 'swap':
+        playTone(440, 'sine', 0.06, 0, 0.12);
+        playTone(587, 'sine', 0.08, 0.05, 0.12);
+        break;
+      case 'transition':
+        playTone(330, 'sine', 0.09, 0, 0.09);
+        playTone(494, 'triangle', 0.11, 0.05, 0.1);
+        playTone(659, 'sine', 0.14, 0.1, 0.1);
+        break;
+      case 'hint':
+        playTone(523, 'sine', 0.12, 0, 0.13);
+        playTone(659, 'sine', 0.18, 0.12, 0.13);
+        break;
+      case 'correct':
+        playTone(523.25, 'triangle', 0.12, 0, 0.18);
+        playTone(659.25, 'triangle', 0.12, 0.09, 0.18);
+        playTone(783.99, 'triangle', 0.14, 0.18, 0.18);
+        playTone(1046.5, 'sine', 0.28, 0.27, 0.2);
+        break;
+      case 'wrong':
+        playTone(190, 'sawtooth', 0.16, 0, 0.15);
+        playTone(145, 'sawtooth', 0.24, 0.14, 0.15);
+        if (navigator.vibrate) navigator.vibrate([90, 40, 90]);
+        break;
+      case 'missionWin':
+        [523.25, 659.25, 783.99, 659.25, 1046.5].forEach((f, i) => {
+          playTone(f, 'triangle', 0.18, i * 0.11, 0.18);
+        });
+        break;
+      case 'grandWin':
+        [440, 554.37, 659.25, 880, 659.25, 1108.73].forEach((f, i) => {
+          playTone(f, 'triangle', 0.22, i * 0.12, 0.2);
+        });
+        break;
+    }
+  }
+
+  function toggleSFX() {
+    sfxEnabled = !sfxEnabled;
+    document.getElementById('btn-sfx').textContent = sfxEnabled ? '🔊 SFX: Aktif' : '🔇 SFX: Mati';
+    if (sfxEnabled) playSFX('click');
+  }
+
+  function toggleBGM() {
+    bgmEnabled = !bgmEnabled;
+    document.getElementById('btn-bgm').textContent = bgmEnabled ? '🎵 Musik: Aktif' : '🎵 Musik: Mati';
+    if (bgmEnabled) {
+      ensureAudioCtx();
+      startBGMLoop();
+    } else {
+      stopBGMLoop();
+    }
+  }
+
+  function startBGMLoop() {
+    stopBGMLoop();
+    const melody = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 349.23];
+    bgmInterval = setInterval(() => {
+      if (!bgmEnabled || !audioCtx) return;
+      const freq = melody[bgmStep % melody.length];
+      bgmStep++;
+      try {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.035, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.24);
+      } catch (e) {}
+    }, 280);
+  }
+
+  function stopBGMLoop() {
+    if (bgmInterval) {
+      clearInterval(bgmInterval);
+      bgmInterval = null;
+    }
+  }
+
+  /********************************************************************
+   * 2. MESIN PARTIKEL KONFETI & BINTANG 3D (CANVAS)
+   ********************************************************************/
+  const canvas = document.getElementById('fx-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function spawnConfettiBurst(count = 40) {
+    const colors = ['#22d3ee', '#fbbf24', '#10b981', '#f97316', '#a855f7', '#ffffff'];
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: window.innerWidth / 2,
+        y: window.innerHeight * 0.45,
+        vx: (Math.random() - 0.5) * 13,
+        vy: (Math.random() - 0.85) * 14,
+        size: Math.random() * 8 + 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * 360,
+        vRot: (Math.random() - 0.5) * 12,
+        life: 1
+      });
+    }
+    if (particles.length === count) requestAnimationFrame(updateParticles);
+  }
+
+  function updateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.35;
+      p.rot += p.vRot;
+      p.life -= 0.016;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rot * Math.PI) / 180);
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+      ctx.restore();
+    });
+    particles = particles.filter(p => p.life > 0);
+    if (particles.length > 0) requestAnimationFrame(updateParticles);
+  }
+
+  /********************************************************************
+   * 3. GENERATOR AVATAR KIKO 3D & MOCKUP APLIKASI AI
+   ********************************************************************/
+  function getKiko3DSVG(mood = 'happy') {
+    let eyes = '';
+    let mouth = '';
+    let antennaGlow = '#fbbf24';
+
+    if (mood === 'happy' || mood === 'antusias') {
+      eyes = `<g class="kiko-eye-blink"><circle cx="30" cy="36" r="5" fill="#22d3ee"/><circle cx="50" cy="36" r="5" fill="#22d3ee"/><circle cx="28" cy="34" r="1.8" fill="#fff"/><circle cx="48" cy="34" r="1.8" fill="#fff"/></g>`;
+      mouth = `<path d="M 33 45 Q 40 51 47 45" stroke="#22d3ee" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
+    } else if (mood === 'hint' || mood === 'thinking') {
+      antennaGlow = '#38bdf8';
+      eyes = `<g class="kiko-eye-blink"><rect x="25" y="34" width="11" height="4.5" rx="2" fill="#fde047"/><circle cx="50" cy="36" r="5.5" fill="#fde047"/></g>`;
+      mouth = `<line x1="34" y1="46" x2="46" y2="45" stroke="#fde047" stroke-width="2.8" stroke-linecap="round"/>`;
+    } else if (mood === 'surprised') {
+      antennaGlow = '#ef4444';
+      eyes = `<circle cx="30" cy="36" r="6" fill="#fb923c"/><circle cx="50" cy="36" r="6" fill="#fb923c"/>`;
+      mouth = `<circle cx="40" cy="46" r="4" fill="#fb923c"/>`;
+    } else if (mood === 'celebrate') {
+      antennaGlow = '#10b981';
+      eyes = `<path d="M 25 38 Q 30 30 35 38" stroke="#4ade80" stroke-width="3" fill="none"/><path d="M 45 38 Q 50 30 55 38" stroke="#4ade80" stroke-width="3" fill="none"/>`;
+      mouth = `<path d="M 31 44 Q 40 53 49 44 Z" fill="#4ade80"/>`;
+    }
+
+    return `
+      <svg viewBox="0 0 80 80" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="roboHead" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#cbd5e1"/>
+          </linearGradient>
+        </defs>
+        <line x1="40" y1="5" x2="40" y2="17" stroke="#67e8f9" stroke-width="4"/>
+        <circle cx="40" cy="5" r="5.5" fill="${antennaGlow}"/>
+        <rect x="8" y="28" width="7" height="16" rx="3" fill="#0284c7"/>
+        <rect x="65" y="28" width="7" height="16" rx="3" fill="#0284c7"/>
+        <rect x="14" y="16" width="52" height="40" rx="14" fill="url(#roboHead)" stroke="#06b6d4" stroke-width="3"/>
+        <rect x="20" y="22" width="40" height="28" rx="9" fill="#091526"/>
+        ${eyes}
+        ${mouth}
+        <rect x="23" y="58" width="34" height="17" rx="7" fill="#0d9488" stroke="#67e8f9" stroke-width="2.2"/>
+        <circle cx="40" cy="66.5" r="4.5" fill="#fde047"/>
+      </svg>
+    `;
+  }
+
+  function setKikoDialog(avatarId, speechId, mood, htmlText) {
+    const av = document.getElementById(avatarId);
+    const sp = document.getElementById(speechId);
+    if (av) av.innerHTML = getKiko3DSVG(mood);
+    if (!sp) return;
+    sp.style.opacity = '0';
+    sp.innerHTML = htmlText;
+    setTimeout(() => {
+      sp.style.transition = 'opacity 0.25s ease';
+      sp.style.opacity = '1';
+    }, 20);
+  }
+
+  function getAppMockupSVG(type) {
+    if (type === 'lens') {
+      return `
+        <svg viewBox="0 0 340 130" width="100%" style="max-width:320px;" xmlns="http://www.w3.org/2000/svg">
+          <rect width="340" height="130" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+          <rect x="14" y="14" width="115" height="102" rx="8" fill="#0f172a"/>
+          <path d="M 30 30 L 45 30 M 30 30 L 30 45" stroke="#22d3ee" stroke-width="3"/>
+          <path d="M 112 30 L 97 30 M 112 30 L 112 45" stroke="#22d3ee" stroke-width="3"/>
+          <path d="M 30 100 L 45 100 M 30 100 L 30 85" stroke="#22d3ee" stroke-width="3"/>
+          <path d="M 112 100 L 97 100 M 112 100 L 112 85" stroke="#22d3ee" stroke-width="3"/>
+          <path d="M 71 40 C 96 40 96 80 71 90 C 46 80 46 40 71 40 Z" fill="#10b981"/>
+          <rect x="142" y="20" width="184" height="90" rx="8" fill="#0f172a" stroke="#0d9488"/>
+          <text x="154" y="45" fill="#67e8f9" font-size="11.5" font-weight="bold">🔍 Google Lens / Vision AI</text>
+          <text x="154" y="68" fill="#f8fafc" font-size="11">Objek: Daun Monstera (98%)</text>
+          <text x="154" y="88" fill="#94a3b8" font-size="10">Pola tepi & tekstur cocok</text>
+        </svg>
+      `;
+    } else if (type === 'voice') {
+      return `
+        <svg viewBox="0 0 340 130" width="100%" style="max-width:320px;" xmlns="http://www.w3.org/2000/svg">
+          <rect width="340" height="130" rx="12" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
+          <circle cx="62" cy="65" r="30" fill="#0284c7"/>
+          <rect x="55" y="46" width="14" height="24" rx="7" fill="#fff"/>
+          <path d="M 47 63 Q 62 81 77 63" stroke="#fff" stroke-width="2.5" fill="none"/>
+          <line x1="62" y1="75" x2="62" y2="85" stroke="#fff" stroke-width="2.5"/>
+          <rect x="112" y="50" width="5" height="30" rx="2.5" fill="#22d3ee"/>
+          <rect x="122" y="36" width="5" height="58" rx="2.5" fill="#67e8f9"/>
+          <rect x="132" y="55" width="5" height="20" rx="2.5" fill="#22d3ee"/>
+          <rect x="142" y="42" width="5" height="46" rx="2.5" fill="#fbbf24"/>
+          <text x="160" y="58" fill="#fde047" font-size="11.5" font-weight="bold">"Setel alarm pukul 06.00"</text>
+          <text x="160" y="80" fill="#e2e8f0" font-size="10.5">✓ Alarm berhasil diaktifkan</text>
+        </svg>
+      `;
+    }
+    return '';
+  }
+
+  /********************************************************************
+   * 4. DATA 5 MISI & FINAL CHALLENGE (18 SOAL TETAP)
+   ********************************************************************/
+  const MISSIONS_DATA = [
+    {
+      id: 'm1',
+      number: 1,
+      name: 'Misi 1: Mengenal Asisten Cerdas',
+      location: 'AI Studio',
+      icon: '🏢',
+      difficulty: 'Mudah',
+      badgeName: 'Lencana Perintis AI Studio',
+      badgeIcon: '🌟',
+      storyProblem: 'Warga Kota Digital bingung membedakan program komputer biasa dengan Kecerdasan Artifisial (AI) serta manfaatnya sehari-hari.',
+      kikoInstruction: 'Di AI Studio, kamu akan menjawab 3 pertanyaan (Pilihan Ganda & Benar/Salah) tentang pengertian dasar AI, contoh penerapannya, dan manfaatnya. Kamu punya maksimal 2 kesempatan menjawab di setiap soal!',
+      comics: [
+        { speaker: 'Agen Digital', art: '🏙️🤖', text: 'Kiko, lihat di AI Studio! Banyak warga mengira kalkulator biasa dan mesin pencari otomatis semuanya sama persis.' },
+        { speaker: 'Kiko', art: '💡📱', text: 'Betul, Agen! Padahal AI dirancang agar sistem dapat mengenali pola dari data, belajar, dan membantu memberikan rekomendasi atau prediksi.' },
+        { speaker: 'Kiko', art: '🚀✨', text: 'Ayo bantu warga memahami pengertian AI, contoh nyata di sekitar kita, serta manfaat positifnya!' }
+      ],
+      questions: [
+        {
+          id: 'm1_q1',
+          type: 'multiple_choice',
+          weight: 4,
+          question: 'Manakah pernyataan yang paling tepat menjelaskan pengertian Kecerdasan Artifisial (AI) dan contoh penerapannya sehari-hari?',
+          options: [
+            'Teknologi yang memungkinkan mesin mengenali pola dari data untuk memberikan prediksi atau rekomendasi, contohnya fitur rekomendasi video dan navigasi rute tercepat.',
+            'Semua perangkat elektronik yang menggunakan listrik dan memiliki tombol fisik, contohnya lampu senter dan kipas angin manual.',
+            'Mesin yang memiliki perasaan biologis sama persis seperti manusia dan tidak memerlukan data sama sekali.',
+            'Aplikasi kalkulator sederhana yang hanya menjumlahkan angka statis tanpa mempelajari pola data.'
+          ],
+          correctAnswer: 0,
+          hint: 'Ingat kata kuncinya: AI bekerja dengan mengenali pola dari data untuk memberi rekomendasi atau keputusan cerdas!',
+          explanation: 'Tepat! AI memanfaatkan data dan algoritma untuk mengenali pola, seperti rekomendasi tontonan atau penentuan rute lalu lintas tercepat.'
+        },
+        {
+          id: 'm1_q2',
+          type: 'true_false',
+          weight: 4,
+          question: 'PERNYATAAN: Fitur filter spam pada email dan penerjemah bahasa otomatis di ponsel merupakan contoh penerapan AI dalam kehidupan sehari-hari.',
+          options: ['BENAR', 'SALAH'],
+          correctAnswer: 0,
+          hint: 'Coba pikirkan, bagaimana email tahu mana pesan spam dan bagaimana aplikasi menerjemahkan kalimat? Keduanya mengenali pola bahasa!',
+          explanation: 'Benar! Filter spam dan penerjemah bahasa otomatis menggunakan pemrosesan bahasa alami (NLP) yang merupakan cabang dari AI.'
+        },
+        {
+          id: 'm1_q3',
+          type: 'multiple_choice',
+          weight: 4,
+          question: 'Manakah di bawah ini yang merupakan manfaat utama penggunaan AI bagi siswa SMK dalam kegiatan belajar dan praktik kejuruan?',
+          options: [
+            'Menggantikan seluruh peran siswa sehingga siswa tidak perlu memahami materi kejuruan sama sekali.',
+            'Membantu mempercepat pencarian ide, menjelaskan konsep koding yang sulit dipahami, dan meningkatkan efisiensi kerja.',
+            'Menjamin nilai ujian otomatis 100 tanpa perlu memeriksa kebenaran jawaban yang diberikan AI.',
+            'Menghapus kebutuhan akan keterampilan berpikir kritis dan kerja sama tim di bengkel praktik.'
+          ],
+          correctAnswer: 1,
+          hint: 'AI adalah asisten pendamping belajar, bukan pengganti akal sehat atau usaha belajarmu!',
+          explanation: 'Kerja bagus! Manfaat utama AI adalah menjadi asisten produktivitas untuk eksplorasi ide dan pemahaman konsep, bukan menggantikan proses belajar manusia.'
+        },
+        {
+          id: 'm1_q4',
+          type: 'multiple_choice',
+          weight: 4,
+          question: 'Berdasarkan materi "Kalkulator vs. Otak Digital", apa perbedaan utama antara Program Komputer Biasa (seperti kalkulator/kasir) dengan Sistem AI (seperti pengenalan gambar)?',
+          options: [
+            'Program biasa menjalankan aturan dan rumus pasti secara kaku, sedangkan Sistem AI mempelajari pola dari data untuk membuat keluaran prediktif.',
+            'Program biasa belajar sendiri dari ribuan foto, sedangkan Sistem AI hanya bisa menghitung rumus matematika dasar.',
+            'Program biasa selalu menghasilkan tebakan yang berubah-ubah, sedangkan Sistem AI tidak membutuhkan aturan komputasi dasar.',
+            'Keduanya bekerja dengan cara yang 100% sama persis tanpa memerlukan data masukan.'
+          ],
+          correctAnswer: 0,
+          hint: 'Ingat perbandingan Kalkulator vs Otak Digital: mana yang memakai "Aturan & Rumus Pasti" dan mana yang memakai "Pola & Prediksi dari Data"?',
+          explanation: 'Tepat! Program komputer biasa menjalankan aturan/rumus pasti secara eksplisit (menghasilkan output akurat sesuai rumus), sedangkan Sistem AI mempelajari pola dari data untuk menghasilkan output prediktif.'
+        }
+      ]
+    },
+    {
+      id: 'm2',
+      number: 2,
+      name: 'Misi 2: Misteri Sensor Pola',
+      location: 'Pattern Recognition Lab',
+      icon: '🔬',
+      difficulty: 'Mudah - Sedang',
+      badgeName: 'Lencana Detektif Pola',
+      badgeIcon: '🔍',
+      storyProblem: 'Sensor kamera dan mikrofon di laboratorium mengalami gangguan klasifikasi. Sistem perlu dikalibrasi ulang pada tahapan proses AI, pola gambar, dan pola suara.',
+      kikoInstruction: 'Kita akan menghadapi 3 tantangan seru: mengurutkan gambaran umum cara kerja AI, serta menebak fungsi AI dari tampilan aplikasi pengenal gambar dan suara!',
+      comics: [
+        { speaker: 'Agen Digital', art: '📷🎙️', text: 'Kiko, sensor visual dan mikrofon di laboratorium ini mencampuradukkan data masukan dan keluaran!' },
+        { speaker: 'Kiko', art: '🧠📊', text: 'Secara sederhana, banyak sistem AI bekerja melalui tahapan: menerima Data Masukan, melakukan Pemrosesan/Pembelajaran Pola, lalu menghasilkan Keluaran/Prediksi.' },
+        { speaker: 'Kiko', art: '🎯🔧', text: 'Mari kita susun ulang alur prosesnya dan uji sensor pengenalan pola gambar serta suaranya!' }
+      ],
+      questions: [
+        {
+          id: 'm2_q1',
+          type: 'ordering',
+          weight: 5,
+          context: 'Catatan Penting: Urutan berikut adalah gambaran sederhana untuk memahami alur dasar AI secara umum, bukan gambaran lengkap untuk semua jenis arsitektur AI.',
+          question: 'Susunlah urutan gambaran umum cara kerja sistem AI dari tahap awal hingga akhir menggunakan tombol panah ▲ / ▼!',
+          items: [
+            'Pengumpulan Data Masukan (Input Data seperti teks, gambar, atau suara)',
+            'Pemrosesan & Pengenalan Pola oleh Model AI',
+            'Menghasilkan Keluaran (Output berupa prediksi, klasifikasi, atau rekomendasi)'
+          ],
+          initialOrder: [2, 0, 1],
+          hint: 'Sistem AI membutuhkan bahan baku berupa data terlebih dahulu sebelum bisa memproses pola dan menghasilkan keluaran!',
+          explanation: 'Tepat sekali! Gambaran sederhananya dimulai dari Data Masukan (Input), dilanjutkan Pemrosesan/Pembelajaran Pola, dan diakhiri dengan Keluaran/Prediksi (Output).'
+        },
+        {
+          id: 'm2_q2',
+          type: 'image_guess',
+          weight: 5,
+          mediaType: 'lens',
+          question: 'Perhatikan ilustrasi aplikasi kamera pintar (seperti Google Lens) di atas! Bagaimana AI pada aplikasi tersebut mengenali jenis tanaman?',
+          options: [
+            'Mencocokkan pola visual (bentuk tepi daun, warna, dan tekstur piksel gambar) dengan ribuan data gambar tanaman yang telah dipelajari.',
+            'Mencium aroma tanaman secara langsung melalui layar kaca ponsel pengguna.',
+            'Menebak nama tanaman secara acak tanpa memperhatikan gambar yang difoto.',
+            'Mengukur berat fisik pot tanaman menggunakan gelombang suara mikrofon.'
+          ],
+          correctAnswer: 0,
+          hint: 'Perhatikan kotak bidik pada gambar! Bagian visual apa yang dianalisis oleh kamera AI?',
+          explanation: 'Benar! Pengenalan pola pada gambar (Computer Vision) menganalisis fitur visual seperti bentuk, warna, dan tekstur lalu membandingkannya dengan pola data latih.'
+        },
+        {
+          id: 'm2_q3',
+          type: 'image_guess',
+          weight: 5,
+          mediaType: 'voice',
+          question: 'Perhatikan ilustrasi asisten suara pintar di atas! Fungsi pengenalan pola suara pada AI tersebut bekerja dengan cara...',
+          options: [
+            'Mengubah gelombang suara ucapan pengguna menjadi sinyal digital, mengenali pola fonem/kata, lalu mengeksekusi perintah.',
+            'Memindai sidik jari pengguna melalui tombol volume ponsel.',
+            'Hanya merekam suara untuk disimpan sebagai file musik tanpa memahami isi kalimatnya.',
+            'Membaca gerakan bibir pengguna meskipun kamera ponsel dalam keadaan tertutup.'
+          ],
+          correctAnswer: 0,
+          hint: 'Perhatikan grafik gelombang suara yang diubah menjadi teks perintah "Setel alarm pukul 06.00"!',
+          explanation: 'Hebat! Sistem Speech Recognition mengenali pola frekuensi dan gelombang suara untuk mengubah ucapan menjadi teks dan memahami maksud perintah.'
+        },
+        {
+          id: 'm2_q4',
+          type: 'multiple_choice',
+          weight: 5,
+          question: 'Saat memproses gelombang audio pada Pengenalan Suara (Telinga Digital), karakteristik bunyi apa saja yang dianalisis oleh AI dan apa risiko kesalahannya?',
+          options: [
+            'Menganalisis frekuensi (tinggi/rendah bunyi), tempo (cepat/lambat), dan intensitas (kuat/lemah); dengan risiko kesalahan akibat suara bising lingkungan atau logat/aksen yang tidak dikenali.',
+            'Menganalisis komposisi piksel warna, siluet garis tepi, dan tekstur permukaan bulu; dengan risiko kesalahan akibat pencahayaan ruangan yang gelap.',
+            'Menganalisis suhu mikrofon dan berat perangkat; tanpa dipengaruhi oleh kebisingan lingkungan sekitar.',
+            'Menganalisis jarak antar mata dan rasio wajah; dengan risiko kesalahan akibat kamera yang buram.'
+          ],
+          correctAnswer: 0,
+          hint: 'Bedakan antara "Mata Digital" (Citra/Piksel) dan "Telinga Digital" (Gelombang Suara: Frekuensi, Tempo, Intensitas)!',
+          explanation: 'Benar! Anatomi pengenalan suara memproses gelombang audio berdasarkan frekuensi, tempo, intensitas, dan pola sumber suara, namun akurasinya sangat dipengaruhi oleh suara bising lingkungan, kualitas mikrofon, dan pelafalan/aksen.'
+        }
+      ]
+    },
+    {
+      id: 'm3',
+      number: 3,
+      name: 'Misi 3: Sinyal Palsu di Pusat Data',
+      location: 'Data Center',
+      icon: '🗄️',
+      difficulty: 'Sedang',
+      badgeName: 'Lencana Penjaga Kebenaran Data',
+      badgeIcon: '🛡️',
+      storyProblem: 'Di Data Center beredar informasi keliru akibat halusinasi AI dan bias data, serta pengguna yang langsung mempercayai hasil AI tanpa verifikasi.',
+      kikoInstruction: 'Waspada, Agen! Di Data Center kamu harus menganalisis risiko atau dampak negatif AI serta menyusun langkah aman saat menggunakan layanan AI.',
+      comics: [
+        { speaker: 'Agen Digital', art: '⚠️📄', text: 'Kiko! Ada warga yang menyebarkan artikel sejarah Kota Digital yang salah total karena dibuat otomatis oleh AI!' },
+        { speaker: 'Kiko', art: '🤖❓', text: 'Itu disebut risiko "halusinasi AI"! AI generatif bisa merangkai kalimat yang terdengar meyakinkan padahal faktanya keliru, atau menghasilkan bias.' },
+        { speaker: 'Kiko', art: '🔍✅', text: 'Ayo kita identifikasi risiko negatif AI dan terapkan prosedur penggunaan AI yang aman!' }
+      ],
+      questions: [
+        {
+          id: 'm3_q1',
+          type: 'multiple_choice',
+          weight: 5,
+          question: 'Manakah di bawah ini yang merupakan risiko atau dampak negatif nyata dari penggunaan AI yang tidak diimbangi literasi digital?',
+          options: [
+            'Munculnya informasi palsu yang tampak meyakinkan (halusinasi AI), penyalahgunaan deepfake, serta bias keputusan jika data latihnya tidak adil.',
+            'Komputer menjadi lebih hemat listrik karena AI bekerja tanpa memerlukan perangkat keras.',
+            'Semua informasi di internet otomatis menjadi 100% akurat dan bebas dari hoaks.',
+            'Koneksi internet di seluruh dunia berubah menjadi jaringan kabel telepon rumah.'
+          ],
+          correctAnswer: 0,
+          hint: 'Ingat masalah di komik tadi: AI bisa membuat teks/gambar palsu yang tampak nyata atau mewarisi bias dari datanya.',
+          explanation: 'Tepat! Risiko utama AI meliputi halusinasi informasi, manipulasi visual/suara (deepfake), ketergantungan berlebih, serta bias data.'
+        },
+        {
+          id: 'm3_q2',
+          type: 'case_study',
+          weight: 5,
+          context: 'Studi Kasus SMK: Andi menggunakan chatbot AI untuk mencari spesifikasi komponen elektronika untuk tugas bengkel. Chatbot memberikan nomor seri komponen dan rumus tegangan yang terlihat sangat rapi, tetapi saat dicari di buku manual resmi, nomor seri tersebut tidak pernah ada.',
+          question: 'Apa tindakan paling tepat yang harus dilakukan Andi menghadapi situasi tersebut?',
+          options: [
+            'Tetap memakai data dari AI karena kalimat AI terlihat lebih meyakinkan daripada buku manual.',
+            'Menyadari bahwa AI dapat mengalami halusinasi, lalu mengoreksi tugasnya menggunakan referensi buku manual resmi dan lembar data (datasheet) komponen yang terverifikasi.',
+            'Menyalahkan guru karena buku manual tidak mengikuti karangan chatbot AI.',
+            'Meminta AI membuatkan gambar komponen palsu agar tugasnya tetap terlihat benar.'
+          ],
+          correctAnswer: 1,
+          hint: 'Jangan langsung percaya hasil AI! Jika bertentangan dengan sumber teknis resmi, mana yang harus dijadikan acuan?',
+          explanation: 'Keputusan tepat! Saat AI menghasilkan informasi yang tidak akurat (halusinasi), kita wajib memverifikasi dan mengutamakan sumber referensi resmi/valid.'
+        },
+        {
+          id: 'm3_q3',
+          type: 'ordering',
+          weight: 5,
+          context: 'Panduan Prosedur Agen: Agar terhindar dari kebocoran data dan kesalahan informasi, ikuti urutan langkah aman saat berinteraksi dengan layanan AI.',
+          question: 'Urutkan langkah aman dan kritis dalam menggunakan layanan AI berikut dari awal hingga akhir menggunakan tombol ▲ / ▼!',
+          items: [
+            'Pastikan tidak memasukkan data pribadi atau rahasia ke dalam perintah (prompt)',
+            'Tulis instruksi (prompt) dengan jelas sesuai topik yang ingin dipelajari',
+            'Evaluasi hasil keluaran AI secara kritis dan jangan langsung menganggapnya mutlak benar',
+            'Verifikasi kebenaran fakta atau kode dengan sumber tepercaya sebelum digunakan'
+          ],
+          initialOrder: [2, 0, 3, 1],
+          hint: 'Mulailah dari pencegahan data sensitif saat hendak mengetik prompt, lalu tulis prompt, nilai hasilnya, dan akhiri dengan verifikasi!',
+          explanation: 'Urutan yang sangat presisi! Cegah kebocoran data di awal, berikan prompt yang jelas, nilai hasilnya secara kritis, dan verifikasi dengan sumber valid.'
+        }
+      ]
+    },
+    {
+      id: 'm4',
+      number: 4,
+      name: 'Misi 4: Benteng Privasi Siber',
+      location: 'Security Zone',
+      icon: '🔐',
+      difficulty: 'Menantang',
+      badgeName: 'Lencana Perisai Privasi Siber',
+      badgeIcon: '🔒',
+      storyProblem: 'Sejumlah pengguna di Security Zone hampir mengunggah foto KTP, kata sandi akun sekolah, dan data rahasia ke platform AI publik.',
+      kikoInstruction: 'Misi ini lebih menantang! Uji pemahamanmu mengenai privasi, perlindungan data pribadi, dan keamanan data ketika menggunakan layanan AI.',
+      comics: [
+        { speaker: 'Agen Digital', art: '🪪🚨', text: 'Gawat Kiko! Ada siswa yang hendak mengunggah foto Kartu Pelajar, NIK, dan password akun sekolah ke chatbot publik!' },
+        { speaker: 'Kiko', art: '🛑🔐', text: 'Hentikan segera! Banyak layanan AI publik menyimpan riwayat percakapan untuk melatih ulang modelnya atau ditinjau sistem.' },
+        { speaker: 'Kiko', art: '🛡️💻', text: 'Data pribadi dan kredensial keamanan tidak boleh dibagikan ke layanan AI. Ayo amankan Security Zone!' }
+      ],
+      questions: [
+        {
+          id: 'm4_q1',
+          type: 'multiple_choice',
+          weight: 6,
+          question: 'Informasi manakah di bawah ini yang termasuk data pribadi sensitif dan TIDAK BOLEH dimasukkan ke dalam layanan chatbot AI publik?',
+          options: [
+            'Pertanyaan umum tentang cara kerja perulangan (looping) pada bahasa pemrograman Python.',
+            'Nomor Induk Kependudukan (NIK), alamat rumah lengkap, nomor telepon pribadi, dan kata sandi akun.',
+            'Permintaan untuk membuatkan daftar ide judul proyek aplikasi perpustakaan sekolah.',
+            'Teks paragraf tentang sejarah penemuan mesin uap untuk dirangkum.'
+          ],
+          correctAnswer: 1,
+          hint: 'Coba pikirkan, informasi mana yang dapat disalahgunakan untuk pencurian identitas atau pembobolan akun jika bocor?',
+          explanation: 'Benar! NIK, alamat rumah, nomor telepon, dan kata sandi adalah data pribadi/sensitif yang harus dijaga kerahasiaannya.'
+        },
+        {
+          id: 'm4_q2',
+          type: 'true_false',
+          weight: 6,
+          question: 'PERNYATAAN: Mengunggah dokumen rahasia tempat Praktik Kerja Lapangan (PKL) ke situs AI publik gratis sepenuhnya aman karena tidak ada layanan AI yang menyimpan data input pengguna.',
+          options: ['BENAR', 'SALAH'],
+          correctAnswer: 1,
+          hint: 'Ingat penjelasan Kiko di komik: apakah semua layanan AI publik gratis menjamin data tidak disimpan atau dipakai melatih model?',
+          explanation: 'Pernyataan tersebut SALAH! Banyak layanan AI publik menyimpan input pengguna pada server mereka dan dapat menggunakannya untuk pelatihan model, sehingga berisiko membocorkan rahasia instansi.'
+        },
+        {
+          id: 'm4_q3',
+          type: 'case_study',
+          weight: 6,
+          context: 'Studi Kasus SMK: Rina sedang memperbaiki kode aplikasi web pendaftaran siswa. Di dalam kode tersebut terdapat konfigurasi kata sandi database asli dan data contoh berisi nama lengkap serta nomor HP teman-teman sekelasnya. Rina ingin meminta bantuan AI untuk mencari letak error (bug) pada kodenya.',
+          question: 'Langkah keamanan data apa yang paling bijak dilakukan Rina sebelum menempelkan kode tersebut ke chatbot AI?',
+          options: [
+            'Langsung menyalin seluruh kode beserta kata sandi database dan nomor HP asli teman-temannya agar AI lebih cepat paham.',
+            'Menghapus atau mengganti kata sandi asli serta nomor HP teman-temannya dengan data samaran (dummy data) terlebih dahulu sebelum meminta AI memeriksa logika kodenya.',
+            'Meminta teman-temannya mengirimkan foto KTP juga untuk dilampirkan ke dalam prompt AI.',
+            'Membagikan tautan percakapan AI berisi kata sandi database tersebut ke media sosial publik.'
+          ],
+          correctAnswer: 1,
+          hint: 'AI hanya perlu memeriksa struktur logika kodenya, bukan kata sandi asli maupun nomor HP temanmu!',
+          explanation: 'Luar biasa! Mengaburkan (anonymize) data pribadi dan mengganti kredensial asli dengan data samaran (dummy) adalah praktik keamanan siber yang wajib diterapkan.'
+        }
+      ]
+    },
+    {
+      id: 'm5',
+      number: 5,
+      name: 'Misi 5: Dewan Etika Akademik',
+      location: 'Ethics District',
+      icon: '⚖️',
+      difficulty: 'Menantang',
+      badgeName: 'Lencana Penegak Etika Digital',
+      badgeIcon: '⚖️',
+      storyProblem: 'Di Ethics District muncul perdebatan tentang batas antara menggunakan AI sebagai asisten belajar yang etis dengan tindakan ketidakjujuran akademik.',
+      kikoInstruction: 'Ini misi kelima sebelum Pusat Kendali! Tunjukkan bahwa kamu memahami etika penggunaan AI dalam pembelajaran di SMK.',
+      comics: [
+        { speaker: 'Agen Digital', art: '📚✍️', text: 'Kiko, sebagian siswa langsung menyalin 100% karangan AI tanpa membacanya dan mengakuinya sebagai karya tulis murni mereka.' },
+        { speaker: 'Kiko', art: '⚖️💡', text: 'Sayang sekali! Jika hanya menyalin buta, siswa tidak mendapatkan ilmu apa pun dan melanggar kejujuran akademik.' },
+        { speaker: 'Kiko', art: '🤝🌟', text: 'Gunakan AI secara etis: jadikan teman diskusi, tulis ulang dengan pemahaman sendiri, dan jujurlah soal penggunaannya!' }
+      ],
+      questions: [
+        {
+          id: 'm5_q1',
+          type: 'case_study',
+          weight: 6,
+          context: 'Studi Kasus SMK: Guru Bahasa Indonesia menugaskan pembuatan esai refleksi tentang kesiapan kerja lulusan SMK. Bayu merasa kesulitan memulai paragraf pertama.',
+          question: 'Cara penggunaan AI manakah yang paling etis dan mendukung proses belajar Bayu?',
+          options: [
+            'Meminta AI membuatkan kerangka ide (outline) dan poin diskusi, lalu Bayu menulis sendiri isi esainya berdasarkan pengalaman dan pemikirannya serta memeriksa kembali kebenarannya.',
+            'Meminta AI menulis seluruh esai dari awal sampai akhir, lalu langsung dikumpulkan tanpa dibaca sedikit pun.',
+            'Menggunakan AI untuk memalsukan tanda tangan guru pada lembar pengesahan tugas.',
+            'Mengambil tugas milik teman lalu meminta AI mengubah sedikit kata-katanya agar tidak ketahuan menyontek.'
+          ],
+          correctAnswer: 0,
+          hint: 'Pilih tindakan yang membuat Bayu tetap berpikir, menulis dengan pemahamannya sendiri, dan menjadikan AI sebatas mitra diskusi!',
+          explanation: 'Sangat bijak! Menggunakan AI untuk brainstorming kerangka ide lalu menulis dan memahami sendiri materinya adalah bentuk pemanfaatan AI yang etis dalam pembelajaran.'
+        },
+        {
+          id: 'm5_q2',
+          type: 'multiple_choice',
+          weight: 6,
+          question: 'Mengapa prinsip transparansi dan kejujuran akademik penting ketika kita memanfaatkan bantuan AI dalam mengerjakan proyek sekolah?',
+          options: [
+            'Agar guru dan rekan tim mengetahui bagian mana yang dibantu teknologi dan bagian mana hasil analisis kita, serta melatih tanggung jawab atas keaslian dan kebenaran karya.',
+            'Supaya kita tidak perlu bertanggung jawab apabila ada kesalahan fatal di dalam laporan proyek.',
+            'Karena aturan etika hanya berlaku bagi perusahaan besar dan tidak berlaku bagi pelajar SMK.',
+            'Agar mesin AI bisa mendapatkan ijazah kelulusan menggantikan siswa.'
+          ],
+          correctAnswer: 0,
+          hint: 'Kejujuran akademik berkaitan dengan integritas dan tanggung jawab manusia terhadap karya yang dikumpulkannya.',
+          explanation: 'Benar! Transparansi menjaga integritas akademik dan menegaskan bahwa manusia tetap memegang tanggung jawab penuh atas karya tersebut.'
+        },
+        {
+          id: 'm5_q3',
+          type: 'true_false',
+          weight: 6,
+          question: 'PERNYATAAN: Apabila sebuah program atau laporan yang dibantu oleh AI menyebabkan kesalahan teknis pada proyek kelompok, maka tanggung jawab tetap berada pada manusia (siswa/pengguna) yang memeriksa dan mengambil keputusan, bukan dilemparkan kepada mesin AI.',
+          options: ['BENAR', 'SALAH'],
+          correctAnswer: 0,
+          hint: 'Apakah mesin AI bisa dimintai pertanggungjawaban moral dan akademik, atau manusialah pemegang keputusan akhir?',
+          explanation: 'Tepat! AI hanyalah alat bantu. Keputusan akhir, verifikasi kualitas, dan tanggung jawab etis sepenuhnya berada di tangan manusia.'
+        }
+      ]
+    }
+  ];
+
+  const FINAL_CHALLENGE_DATA = {
+    id: 'final',
+    number: 6,
+    name: 'Final Challenge: Pusat Kendali AI',
+    location: 'AI Control Room',
+    icon: '🚨',
+    difficulty: 'Kasus Terpadu (3 Keputusan)',
+    badgeName: 'Lencana Komandan Etika AI',
+    badgeIcon: '👑',
+    storyProblem: 'Tim sekolahmu sedang merancang "Sistem Rekap Laporan PKL & Bimbingan Karier Berbasis AI". Kamu harus mengambil 3 keputusan krusial secara berurutan di Pusat Kendali AI!',
+    decisions: [
+      {
+        id: 'fc_q1',
+        weight: 8,
+        stageTitle: 'Keputusan 1 dari 3: Pengolahan Data Siswa',
+        context: 'Situasi Tahap 1 (Privasi & Keamanan Data): Timmu membutuhkan data contoh untuk menguji fitur AI perangkum laporan PKL. Seorang anggota tim mengusulkan untuk langsung mengunggah tabel Excel asli milik sekolah yang berisi Nama Lengkap, NISN, Nomor HP Orang Tua, Alamat Rumah, dan Nilai Rapor seluruh siswa kelas X ke layanan AI publik gratis di internet. Risiko: Data yang diunggah ke layanan publik dapat tersimpan di server pihak ketiga.',
+        question: 'Sebagai Agen Digital di Pusat Kendali, keputusan apa yang kamu ambil?',
+        options: [
+          'Menolak pengunggahan data asli siswa, lalu membuat data simulasi (dummy data) tanpa identitas pribadi untuk menguji fitur AI tersebut.',
+          'Menyetujui pengunggahan data asli seluruh siswa karena cara itu paling cepat dan praktis.',
+          'Mengunggah separuh data asli siswa saja beserta nomor HP orang tua mereka.'
+        ],
+        correctAnswer: 0,
+        kikoCommentCorrect: 'Keputusan brilian, Agen! Kamu berhasil mencegah kebocoran data pribadi ratusan siswa SMK dengan menggunakan data simulasi (dummy).',
+        kikoCommentWrong: 'Waduh, keputusan ini berisiko tinggi! Mengunggah data pribadi asli siswa ke layanan AI publik melanggar privasi dan keamanan data.',
+        consequence: 'Konsekuensi & Prinsip: Data pribadi siswa (NISN, nomor HP, alamat, nilai) wajib dilindungi. Pengujian sistem di layanan AI publik harus selalu menggunakan data samaran (dummy data).'
+      },
+      {
+        id: 'fc_q2',
+        weight: 8,
+        stageTitle: 'Keputusan 2 dari 3: Verifikasi Keluaran Sistem AI',
+        context: 'Situasi Tahap 2 (Ketepatan Informasi & Risiko Halusinasi): Setelah diuji dengan data simulasi, AI menghasilkan draf panduan keselamatan kerja (K3) bengkel dan kode program yang tampak sangat meyakinkan. Namun, ketika kamu membaca sekilas, AI menyebutkan standar tegangan listrik dan pasal aturan K3 yang terdengar asing. Waktu pengumpulan draf tinggal 45 menit. Risiko: Kesalahan prosedur K3 dapat membahayakan keselamatan praktik di bengkel.',
+        question: 'Apa keputusan yang kamu ambil sebelum menyerahkan panduan tersebut?',
+        options: [
+          'Langsung mencetak dan membagikan draf dari AI tanpa diperiksa karena tata bahasanya sudah sangat rapi.',
+          'Menunda pencetakan sejenak untuk memverifikasi dan mengoreksi standar tegangan serta aturan K3 bersama buku pedoman resmi dan guru produktif.',
+          'Menghapus seluruh bagian K3 dan menggantinya dengan karangan bebas tanpa dasar teknis.'
+        ],
+        correctAnswer: 1,
+        kikoCommentCorrect: 'Tepat sasaran! Kamu tidak terjebak oleh bahasa AI yang meyakinkan dan memilih memverifikasi fakta teknis demi keselamatan bersama.',
+        kikoCommentWrong: 'Hati-hati, Agen! Mempercayai mentah-mentah output AI terkait keselamatan kerja tanpa verifikasi berisiko fatal akibat halusinasi informasi AI.',
+        consequence: 'Konsekuensi & Prinsip: Keluaran AI tidak boleh dianggap mutlak benar, terlebih untuk prosedur teknis/K3. Verifikasi silang dengan sumber resmi dan ahli (guru) wajib dilakukan.'
+      },
+      {
+        id: 'fc_q3',
+        weight: 8,
+        stageTitle: 'Keputusan 3 dari 3: Presentasi & Etika Akademik',
+        context: 'Situasi Tahap 3 (Etika Penggunaan AI dalam Pembelajaran): Proyek timmu berjalan lancar dan kini tiba saatnya presentasi akhir di hadapan dewan guru penguji. Guru bertanya bagaimana timmu menyusun draf kode dan merapikan laporan dalam waktu singkat. Risiko: Ketidakjujuran akademik dapat merusak integritas dan kepercayaan terhadap karya tim.',
+        question: 'Bagaimana sikap dan jawaban terbaik yang kamu sampaikan mewakili tim?',
+        options: [
+          'Mengklaim bahwa 100% baris kode dan teks ditulis manual tanpa bantuan alat apa pun agar terlihat lebih hebat.',
+          'Menjelaskan secara jujur dan transparan bagian mana yang dibantu oleh AI (seperti eksplorasi kerangka awal), sekaligus mampu menjelaskan logika kode dan hasil verifikasi yang dikerjakan sendiri oleh tim.',
+          'Menyerahkan robot AI untuk menjawab semua pertanyaan guru karena timmu tidak memahami isi laporan yang dikumpulkan.'
+        ],
+        correctAnswer: 1,
+        kikoCommentCorrect: 'Luar biasa! Kamu menunjukkan sikap pelajar SMK yang berintegritas: transparan tentang penggunaan AI dan benar-benar menguasai karyanya.',
+        kikoCommentWrong: 'Kurang tepat, Agen. Menyembunyikan penggunaan AI atau tidak memahami karya sendiri bertentangan dengan prinsip etika dan kejujuran akademik.',
+        consequence: 'Konsekuensi & Prinsip: Etika penggunaan AI dalam pembelajaran menuntut kejujuran/transparansi atas peran AI, penguasaan penuh terhadap materi, serta tanggung jawab manusia atas karya tersebut.'
+      }
+    ]
+  };
+
+  /********************************************************************
+   * 5. STATE PERMAINAN & REAL-TIME AUTO-SAVE (ANTI RESET SAAT REFRESH)
+   ********************************************************************/
+  let gameState = {
+    nickname: '',
+    currentScreen: 'screen-opening',
+    sessionStartTime: null,
+    sessionEndTime: null,
+    unlockedMissionIndex: 0,
+    completedMissions: {},
+    activeMissionId: null,
+    currentQuestionIndex: 0,
+    attemptsUsed: 0,
+    selectedOption: null,
+    currentOrderState: [],
+    questionAnswered: false,
+    lastAnswerWasCorrect: false,
+    lastEarnedPoints: 0,
+    tempMissionPoints: 0,
+    tempMissionMax: 0,
+    sheetSynced: false
+  };
+
+  function saveStateToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    } catch (e) {}
+  }
+
+  function loadStateFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        gameState = Object.assign(gameState, parsed);
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function switchScreen(screenId, skipSave = false) {
+    playSFX('transition');
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    gameState.currentScreen = screenId;
+    if (!skipSave) saveStateToStorage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /********************************************************************
+   * 6. INISIALISASI & RESTORE OTOMATIS JIKA DI-REFRESH TENGAH JALAN
+   ********************************************************************/
+  function initGame() {
+    setKikoDialog(
+      'kiko-open-avatar',
+      'kiko-open-speech',
+      'happy',
+      'Halo! Aku <strong>Kiko</strong>, robot pendampingmu. <strong>Kota Digital</strong> sedang butuh bantuanmu untuk mengatasi masalah pola AI, kebocoran data, dan etika digital. Siapa <strong>nama panggilanmu</strong>?'
+    );
+
+    const hasSaved = loadStateFromStorage();
+    if (hasSaved && gameState.nickname) {
+      document.getElementById('agent-name-top').textContent = gameState.nickname;
+      document.getElementById('agent-chip').style.display = 'inline-block';
+      document.getElementById('input-nickname').value = gameState.nickname;
+      document.getElementById('greeting-banner').textContent = `✅ Identitas Agen "${gameState.nickname}" Terdaftar!`;
+      document.getElementById('start-adventure-box').style.display = 'flex';
+
+      if (gameState.completedMissions['final'] || gameState.currentScreen === 'screen-results') {
+        showFinalScoreboard(true);
+      } else if (gameState.currentScreen === 'screen-map') {
+        renderMapGrid();
+        switchScreen('screen-map', true);
+      } else if (gameState.currentScreen === 'screen-comic' && gameState.activeMissionId) {
+        restoreComicScreen(gameState.activeMissionId);
+      } else if (gameState.currentScreen === 'screen-question' && gameState.activeMissionId) {
+        restoreQuestionScreenAfterRefresh();
+      } else if (gameState.currentScreen === 'screen-celebration' && gameState.activeMissionId) {
+        restoreCelebrationScreen();
+      }
+    }
+  }
+
+  function confirmNickname() {
+    const raw = document.getElementById('input-nickname').value.trim();
+    if (!raw || raw.length < 2) {
+      playSFX('wrong');
+      const card = document.getElementById('open-form-card');
+      card.classList.remove('shake-anim');
+      void card.offsetWidth;
+      card.classList.add('shake-anim');
+      setKikoDialog('kiko-open-avatar', 'kiko-open-speech', 'surprised', 'Oops! Ketik nama panggilanmu minimal 2 huruf dulu ya, Agen!');
+      return;
+    }
+
+    playSFX('correct');
+    spawnConfettiBurst(25);
+    if (!bgmEnabled) toggleBGM();
+
+    const cleanName = raw.replace(/[<>]/g, '');
+    gameState.nickname = cleanName;
+    if (!gameState.sessionStartTime) {
+      gameState.sessionStartTime = Date.now();
+    }
+
+    document.getElementById('agent-name-top').textContent = cleanName;
+    document.getElementById('agent-chip').style.display = 'inline-block';
+
+    setKikoDialog(
+      'kiko-open-avatar',
+      'kiko-open-speech',
+      'celebrate',
+      `Siap beraksi, <strong>Agen ${cleanName}</strong>? Gerbang Kota Digital sudah terbuka! Tekan tombol oranye di bawah untuk masuk ke Peta Kota.`
+    );
+
+    document.getElementById('greeting-banner').textContent = `✅ Identitas Agen "${cleanName}" Terdaftar!`;
+    document.getElementById('start-adventure-box').style.display = 'flex';
+    saveStateToStorage();
+  }
+
+  /********************************************************************
+   * 7. PETA 3D & MODAL HOLOGRAM MISI
+   ********************************************************************/
+  function getStatusByIndex(idx) {
+    const mId = idx < 5 ? MISSIONS_DATA[idx].id : 'final';
+    if (gameState.completedMissions[mId]) return 'completed';
+    if (idx === gameState.unlockedMissionIndex) return 'active';
+    return 'locked';
+  }
+
+  function enterMapScreen() {
+    if (!gameState.nickname) return;
+    if (!gameState.sessionStartTime) gameState.sessionStartTime = Date.now();
+    closeMissionModal();
+    renderMapGrid();
+    switchScreen('screen-map');
+  }
+
+  function renderMapGrid() {
+    const grid = document.getElementById('map-nodes-grid');
+    grid.innerHTML = '';
+
+    let doneCount = 0;
+    MISSIONS_DATA.forEach((m, idx) => {
+      const st = getStatusByIndex(idx);
+      if (st === 'completed') doneCount++;
+
+      const tagClass = st === 'completed' ? 'tag-done' : (st === 'active' ? 'tag-active' : 'tag-locked');
+      const tagLabel = st === 'completed' ? '✓ Selesai' : (st === 'active' ? '⚡ Aktif' : '🔒 Terkunci');
+
+      const node = document.createElement('div');
+      node.className = `building-node-3d ${st}`;
+      node.onclick = () => openMissionModal(m.id);
+      node.innerHTML = `
+        <div class="node-icon-3d">${st === 'locked' ? '🔒' : m.icon}</div>
+        <div style="font-weight:900; font-size:0.84rem; color:#fff; line-height:1.2;">${m.location}</div>
+        <div style="font-size:0.72rem; color:#bae6fd; font-weight:700;">Misi ${m.number}</div>
+        <span class="status-tag ${tagClass}">${tagLabel}</span>
+      `;
+      grid.appendChild(node);
+    });
+
+    const fcSt = getStatusByIndex(5);
+    const fcTagClass = fcSt === 'completed' ? 'tag-done' : (fcSt === 'active' ? 'tag-active' : 'tag-locked');
+    const fcTagLabel = fcSt === 'completed' ? '✓ Selesai' : (fcSt === 'active' ? '🔥 Terbuka!' : '🔒 Terkunci');
+
+    const fcNode = document.createElement('div');
+    fcNode.className = `building-node-3d ${fcSt}`;
+    fcNode.onclick = () => openMissionModal('final');
+    fcNode.innerHTML = `
+      <div class="node-icon-3d">${fcSt === 'locked' ? '🔒' : FINAL_CHALLENGE_DATA.icon}</div>
+      <div style="font-weight:900; font-size:0.84rem; color:#fde047; line-height:1.2;">${FINAL_CHALLENGE_DATA.location}</div>
+      <div style="font-size:0.72rem; color:#bae6fd; font-weight:700;">Final Challenge</div>
+      <span class="status-tag ${fcTagClass}">${fcTagLabel}</span>
+    `;
+    grid.appendChild(fcNode);
+
+    document.getElementById('map-counter-badge').textContent = `Misi Selesai: ${doneCount} / 5`;
+    document.getElementById('map-final-btn-wrap').style.display = gameState.completedMissions['final'] ? 'block' : 'none';
+
+    if (gameState.completedMissions['final']) {
+      setKikoDialog('kiko-map-avatar', 'kiko-map-speech', 'celebrate', `Hebat, <strong>Agen ${gameState.nickname}</strong>! Semua misi Kota Digital telah selesai. Ketuk tombol di bawah peta untuk melihat Papan Prestasimu!`);
+    } else if (doneCount === 5) {
+      setKikoDialog('kiko-map-avatar', 'kiko-map-speech', 'antusias', `Kelima misi utama beres! Sekarang ketuk gedung <strong>AI Control Room 🚨</strong> untuk menghadapi Final Challenge!`);
+    } else {
+      const nextM = MISSIONS_DATA[gameState.unlockedMissionIndex];
+      setKikoDialog('kiko-map-avatar', 'kiko-map-speech', 'happy', `Ketuk gedung <strong>${nextM.location} ${nextM.icon}</strong> yang sedang menyala untuk memulai Misi ${nextM.number}, <strong>Agen ${gameState.nickname}</strong>!`);
+    }
+  }
+
+  function openMissionModal(missionId) {
+    playSFX('click');
+    const isFinal = missionId === 'final';
+    const data = isFinal ? FINAL_CHALLENGE_DATA : MISSIONS_DATA.find(m => m.id === missionId);
+    const idx = isFinal ? 5 : data.number - 1;
+    const status = getStatusByIndex(idx);
+
+    const pill = document.getElementById('modal-status-pill');
+    pill.className = 'status-tag ' + (status === 'completed' ? 'tag-done' : (status === 'active' ? 'tag-active' : 'tag-locked'));
+    pill.textContent = status === 'completed' ? '✓ MISI SELESAI' : (status === 'active' ? '⚡ MISI AKTIF & TERBUKA' : '🔒 MISI TERKUNCI');
+
+    document.getElementById('modal-icon-box').textContent = status === 'locked' ? '🔒' : data.icon;
+    document.getElementById('modal-loc-label').textContent = `LOKASI: ${data.location}`;
+    document.getElementById('modal-mission-name').textContent = data.name;
+    document.getElementById('modal-diff-badge').textContent = `Tingkat: ${data.difficulty}`;
+    document.getElementById('modal-problem-desc').textContent = data.storyProblem;
+
+    const actionWrap = document.getElementById('modal-action-container');
+    if (status === 'locked') {
+      const req = isFinal
+        ? 'Selesaikan seluruh 5 Misi Utama terlebih dahulu untuk membuka pintu AI Control Room.'
+        : `Selesaikan Misi ${idx} (${MISSIONS_DATA[idx - 1].location}) terlebih dahulu.`;
+      actionWrap.innerHTML = `
+        <div style="background:#fef2f2; border:2px solid #fca5a5; color:#991b1b; padding:10px 12px; border-radius:12px; font-size:0.84rem; font-weight:700;">
+          🔒 <strong>Syarat Pembukaan:</strong><br/>${req}
+        </div>
+      `;
+    } else if (status === 'active') {
+      actionWrap.innerHTML = `
+        <button class="btn-3d btn-orange" onclick="launchMission('${missionId}')">
+          🚀 Mulai Misi Sekarang
+        </button>
+      `;
+    } else {
+      const rec = gameState.completedMissions[missionId];
+      actionWrap.innerHTML = `
+        <div style="background:#ecfdf5; border:2px solid #10b981; color:#065f46; padding:12px; border-radius:14px; font-size:0.85rem; text-align:center;">
+          <div style="font-size:1.5rem;">${data.badgeIcon}</div>
+          <strong>${data.badgeName} (${rec.badgeTier})</strong><br/>
+          Skor Misi: <strong>${rec.pct}%</strong> (${rec.scorePoints}/${rec.maxPoints} poin)<br/>
+          <span style="font-size:0.75rem; color:#047857;">✓ Misi sudah tuntas dan tidak dapat diulang.</span>
+        </div>
+      `;
+    }
+
+    document.getElementById('mission-modal').classList.add('open');
+  }
+
+  function closeMissionModal(e) {
+    if (e && e.target && e.target.id !== 'mission-modal') return;
+    document.getElementById('mission-modal').classList.remove('open');
+  }
+
+  /********************************************************************
+   * 8. PENGANTAR KOMIK & MULAI SOAL (DENGAN DUKUNGAN RESTORE REFRESH)
+   ********************************************************************/
+  function launchMission(missionId) {
+    document.getElementById('mission-modal').classList.remove('open');
+    if (gameState.completedMissions[missionId]) return;
+
+    gameState.activeMissionId = missionId;
+    gameState.currentQuestionIndex = 0;
+
+    if (missionId === 'final') {
+      startMissionQuestions();
+      return;
+    }
+
+    restoreComicScreen(missionId);
+  }
+
+  function restoreComicScreen(missionId) {
+    const m = MISSIONS_DATA.find(x => x.id === missionId);
+    document.getElementById('comic-header-title').textContent = `📖 ${m.name} (${m.location})`;
+
+    const wrap = document.getElementById('comic-panels-wrap');
+    wrap.innerHTML = '';
+
+    m.comics.forEach((c, i) => {
+      const card = document.createElement('div');
+      card.className = 'comic-card-3d';
+      card.innerHTML = `
+        <div class="comic-visual">
+          <span style="background:#0284c7; color:#fff; font-size:0.66rem; font-weight:900; padding:2px 7px; border-radius:99px; margin-bottom:4px;">PANEL ${i + 1}</span>
+          <div style="font-size:2.3rem;">${c.art}</div>
+        </div>
+        <div class="comic-body">
+          <strong style="color:#0284c7; font-size:0.8rem;">${c.speaker}:</strong>
+          <div style="margin-top:2px;">"${c.text}"</div>
+        </div>
+      `;
+      wrap.appendChild(card);
+    });
+
+    setKikoDialog(
+      'kiko-comic-avatar',
+      'kiko-comic-speech',
+      'antusias',
+      `<strong>Instruksi Misi:</strong> ${m.kikoInstruction}`
+    );
+
+    switchScreen('screen-comic');
+  }
+
+  function startMissionQuestions() {
+    const mId = gameState.activeMissionId;
+    const list = mId === 'final' ? FINAL_CHALLENGE_DATA.decisions : MISSIONS_DATA.find(x => x.id === mId).questions;
+
+    gameState.currentQuestionIndex = 0;
+    gameState.tempMissionPoints = 0;
+    gameState.tempMissionMax = list.reduce((acc, q) => acc + q.weight, 0);
+    gameState.attemptsUsed = 0;
+    gameState.selectedOption = null;
+    gameState.questionAnswered = false;
+    gameState.lastEarnedPoints = 0;
+
+    renderActiveQuestion(false);
+    switchScreen('screen-question');
+  }
+
+  /********************************************************************
+   * 9. RENDER SOAL, PENILAIAN 2 KESEMPATAN, & RESTORE KONDISI SOAL
+   ********************************************************************/
+  function getMiniGameTitle(type) {
+    const labels = {
+      multiple_choice: '🧩 Pilihan Ganda',
+      true_false: '⚖️ Benar atau Salah',
+      image_guess: '🖼️ Tebak Fungsi AI dari Gambar',
+      case_study: '📋 Studi Kasus SMK',
+      ordering: '🔢 Urutkan Langkah Proses'
+    };
+    return labels[type] || '🚨 Keputusan Berurutan Pusat Kendali';
+  }
+
+  // RUMUS POIN BERDASARKAN KESEMPATAN MENJAWAB:
+  // Percobaan 1 Benar = Poin Penuh (weight)
+  // Percobaan 2 Benar = Setengah Poin dibulatkan ke atas (misal 5 -> 3, 4 -> 2, 6 -> 3)
+  function calculateQuestionPoints(weight, attemptsUsed, isFinal) {
+    if (isFinal) return weight;
+    if (attemptsUsed === 1) return weight;
+    if (attemptsUsed === 2) return Math.ceil(weight / 2);
+    return 0;
+  }
+
+  function renderActiveQuestion(isRestoring = false) {
+    const mId = gameState.activeMissionId;
+    const isFinal = mId === 'final';
+    const mObj = isFinal ? FINAL_CHALLENGE_DATA : MISSIONS_DATA.find(x => x.id === mId);
+    const qList = isFinal ? FINAL_CHALLENGE_DATA.decisions : mObj.questions;
+    const q = qList[gameState.currentQuestionIndex];
+
+    if (!isRestoring) {
+      gameState.attemptsUsed = 0;
+      gameState.selectedOption = null;
+      gameState.questionAnswered = false;
+      gameState.lastAnswerWasCorrect = false;
+      gameState.lastEarnedPoints = 0;
+      if (q.type === 'ordering') {
+        gameState.currentOrderState = [...q.initialOrder];
+      }
+    }
+
+    document.getElementById('quiz-loc-title').textContent = `${mObj.icon} ${mObj.location}`;
+    document.getElementById('quiz-minigame-sub').textContent = getMiniGameTitle(q.type);
+    document.getElementById('quiz-progress-badge').textContent = isFinal
+      ? `Keputusan ${gameState.currentQuestionIndex + 1} / ${qList.length}`
+      : `Soal ${gameState.currentQuestionIndex + 1} / ${qList.length}`;
+    document.getElementById('quiz-attempt-pill').textContent = isFinal
+      ? 'Kesempatan: 1/1'
+      : `Kesempatan: ${2 - gameState.attemptsUsed}/2`;
+
+    setKikoDialog(
+      'kiko-quiz-avatar',
+      'kiko-quiz-speech',
+      'happy',
+      isFinal
+        ? `<strong>${q.stageTitle}:</strong> Baca situasi & risikonya dengan cermat, <strong>Agen ${gameState.nickname}</strong>. Di Pusat Kendali hanya ada <strong>1 kesempatan</strong> menjawab!`
+        : `Pilih atau susun jawaban terbaikmu, <strong>Agen ${gameState.nickname}</strong>! Benar di kesempatan ke-1 dapat <strong>${q.weight} poin</strong>, kesempatan ke-2 dapat <strong>${Math.ceil(q.weight / 2)} poin</strong>.`
+    );
+
+    const ctxBanner = document.getElementById('question-context-banner');
+    if (q.context) {
+      ctxBanner.style.display = 'block';
+      ctxBanner.textContent = q.context;
+    } else {
+      ctxBanner.style.display = 'none';
+    }
+
+    const mediaFrame = document.getElementById('question-media-frame');
+    if (q.type === 'image_guess' && q.mediaType) {
+      mediaFrame.style.display = 'flex';
+      mediaFrame.innerHTML = getAppMockupSVG(q.mediaType);
+    } else {
+      mediaFrame.style.display = 'none';
+      mediaFrame.innerHTML = '';
+    }
+
+    document.getElementById('question-prompt-text').textContent = q.question;
+
+    const container = document.getElementById('interaction-container');
+    container.innerHTML = '';
+
+    const submitBtn = document.getElementById('btn-submit-answer');
+    submitBtn.style.display = 'inline-flex';
+
+    if (q.type === 'ordering') {
+      if (!gameState.currentOrderState || gameState.currentOrderState.length === 0) {
+        gameState.currentOrderState = [...q.initialOrder];
+      }
+      renderOrderingCards(q);
+      submitBtn.disabled = false;
+    } else {
+      const letters = ['A', 'B', 'C', 'D'];
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-3d' + (gameState.selectedOption === idx ? ' selected' : '');
+        btn.id = `opt-3d-${idx}`;
+        btn.onclick = () => chooseOption(idx);
+        btn.innerHTML = `
+          <span class="opt-badge-3d">${q.type === 'true_false' ? (idx === 0 ? '✓' : '✗') : letters[idx]}</span>
+          <span style="flex:1;">${opt}</span>
+        `;
+        container.appendChild(btn);
+      });
+      submitBtn.disabled = (gameState.selectedOption === null);
+    }
+
+    const fb = document.getElementById('feedback-box');
+    fb.className = 'feedback-3d';
+    document.getElementById('btn-retry-q').style.display = 'none';
+    document.getElementById('btn-next-q').style.display = 'none';
+
+    if (!isRestoring) saveStateToStorage();
+  }
+
+  function restoreQuestionScreenAfterRefresh() {
+    renderActiveQuestion(true);
+    if (gameState.questionAnswered) {
+      applyEvaluatedUI(gameState.lastAnswerWasCorrect, true);
+    }
+    switchScreen('screen-question', true);
+  }
+
+  function chooseOption(idx) {
+    if (gameState.questionAnswered) return;
+    playSFX('select');
+    gameState.selectedOption = idx;
+    document.querySelectorAll('.option-3d').forEach((b, i) => {
+      b.classList.toggle('selected', i === idx);
+    });
+    document.getElementById('btn-submit-answer').disabled = false;
+    saveStateToStorage();
+  }
+
+  function renderOrderingCards(q) {
+    const container = document.getElementById('interaction-container');
+    container.innerHTML = '';
+
+    gameState.currentOrderState.forEach((itemIdx, pos) => {
+      const card = document.createElement('div');
+      card.className = 'order-card-3d';
+      card.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; flex:1;">
+          <span style="background:#0284c7; color:#fff; width:30px; height:30px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; font-weight:900; flex-shrink:0; box-shadow:0 3px 0 #0369a1;">
+            ${pos + 1}
+          </span>
+          <span style="font-size:0.88rem; font-weight:700; color:#0f172a; line-height:1.35;">
+            ${q.items[itemIdx]}
+          </span>
+        </div>
+        <div class="order-btn-group">
+          <button class="btn-step-move" ${pos === 0 || gameState.questionAnswered ? 'disabled' : ''} onclick="shiftOrderStep(${pos}, -1)">▲</button>
+          <button class="btn-step-move" ${pos === gameState.currentOrderState.length - 1 || gameState.questionAnswered ? 'disabled' : ''} onclick="shiftOrderStep(${pos}, 1)">▼</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function shiftOrderStep(pos, delta) {
+    if (gameState.questionAnswered) return;
+    const target = pos + delta;
+    if (target < 0 || target >= gameState.currentOrderState.length) return;
+    playSFX('swap');
+
+    const mId = gameState.activeMissionId;
+    const q = MISSIONS_DATA.find(x => x.id === mId).questions[gameState.currentQuestionIndex];
+
+    const temp = gameState.currentOrderState[pos];
+    gameState.currentOrderState[pos] = gameState.currentOrderState[target];
+    gameState.currentOrderState[target] = temp;
+    renderOrderingCards(q);
+    saveStateToStorage();
+  }
+
+  function checkUserAnswer() {
+    if (gameState.questionAnswered) return;
+
+    const mId = gameState.activeMissionId;
+    const isFinal = mId === 'final';
+    const mObj = isFinal ? FINAL_CHALLENGE_DATA : MISSIONS_DATA.find(x => x.id === mId);
+    const q = (isFinal ? FINAL_CHALLENGE_DATA.decisions : mObj.questions)[gameState.currentQuestionIndex];
+
+    let isCorrect = false;
+    if (q.type === 'ordering') {
+      isCorrect = gameState.currentOrderState.every((val, i) => val === i);
+    } else {
+      if (gameState.selectedOption === null) return;
+      isCorrect = gameState.selectedOption === q.correctAnswer;
+    }
+
+    gameState.attemptsUsed++;
+    gameState.questionAnswered = true;
+    gameState.lastAnswerWasCorrect = isCorrect;
+
+    if (isCorrect) {
+      const earned = calculateQuestionPoints(q.weight, gameState.attemptsUsed, isFinal);
+      gameState.lastEarnedPoints = earned;
+      gameState.tempMissionPoints += earned;
+    } else {
+      gameState.lastEarnedPoints = 0;
+    }
+
+    saveStateToStorage();
+    applyEvaluatedUI(isCorrect, false);
+  }
+
+  function applyEvaluatedUI(isCorrect, silentRestore = false) {
+    const mId = gameState.activeMissionId;
+    const isFinal = mId === 'final';
+    const mObj = isFinal ? FINAL_CHALLENGE_DATA : MISSIONS_DATA.find(x => x.id === mId);
+    const q = (isFinal ? FINAL_CHALLENGE_DATA.decisions : mObj.questions)[gameState.currentQuestionIndex];
+
+    document.querySelectorAll('.option-3d').forEach(b => b.disabled = true);
+    if (q.type === 'ordering') renderOrderingCards(q);
+    document.getElementById('btn-submit-answer').style.display = 'none';
+
+    const fbBox = document.getElementById('feedback-box');
+    const fbTitle = document.getElementById('fb-title');
+    const fbDesc = document.getElementById('fb-desc');
+    const fbHint = document.getElementById('fb-hint');
+    const btnRetry = document.getElementById('btn-retry-q');
+    const btnNext = document.getElementById('btn-next-q');
+    const mainCard = document.getElementById('question-main-card');
+
+    mainCard.classList.remove('shake-anim', 'pop-anim');
+    void mainCard.offsetWidth;
+
+    if (isFinal) {
+      document.getElementById('quiz-attempt-pill').textContent = 'Terkunci (1/1)';
+      if (isCorrect) {
+        if (!silentRestore) { playSFX('correct'); spawnConfettiBurst(35); }
+        mainCard.classList.add('pop-anim');
+        if (gameState.selectedOption !== null && document.getElementById(`opt-3d-${gameState.selectedOption}`)) {
+          document.getElementById(`opt-3d-${gameState.selectedOption}`).classList.add('correct-ans');
+        }
+        setKikoDialog('kiko-quiz-avatar', 'kiko-quiz-speech', 'celebrate', q.kikoCommentCorrect);
+        fbBox.className = 'feedback-3d show success';
+        fbTitle.textContent = `✨ Keputusan Bijak & Tepat! (+${q.weight} Poin)`;
+      } else {
+        if (!silentRestore) playSFX('wrong');
+        mainCard.classList.add('shake-anim');
+        if (gameState.selectedOption !== null && document.getElementById(`opt-3d-${gameState.selectedOption}`)) {
+          document.getElementById(`opt-3d-${gameState.selectedOption}`).classList.add('wrong-ans');
+        }
+        if (document.getElementById(`opt-3d-${q.correctAnswer}`)) {
+          document.getElementById(`opt-3d-${q.correctAnswer}`).classList.add('correct-ans');
+        }
+        setKikoDialog('kiko-quiz-avatar', 'kiko-quiz-speech', 'surprised', q.kikoCommentWrong);
+        fbBox.className = 'feedback-3d show error';
+        fbTitle.textContent = '⚠️ Keputusan Kurang Tepat (0 Poin)';
+      }
+      fbDesc.textContent = q.consequence;
+      fbHint.style.display = 'none';
+      btnRetry.style.display = 'none';
+      btnNext.style.display = 'inline-flex';
+      return;
+    }
+
+    // Misi Biasa (Maksimal 2 Kesempatan dengan Poin Bertingkat)
+    document.getElementById('quiz-attempt-pill').textContent = `Percobaan: ${gameState.attemptsUsed}/2`;
+
+    if (isCorrect) {
+      if (!silentRestore) { playSFX('correct'); spawnConfettiBurst(35); }
+      mainCard.classList.add('pop-anim');
+      if (q.type !== 'ordering' && gameState.selectedOption !== null && document.getElementById(`opt-3d-${gameState.selectedOption}`)) {
+        document.getElementById(`opt-3d-${gameState.selectedOption}`).classList.add('correct-ans');
+      }
+
+      const earnedPts = gameState.lastEarnedPoints || calculateQuestionPoints(q.weight, gameState.attemptsUsed, false);
+
+      if (gameState.attemptsUsed === 1) {
+        setKikoDialog(
+          'kiko-quiz-avatar',
+          'kiko-quiz-speech',
+          'celebrate',
+          `Sempurna pada percobaan pertama, <strong>Agen ${gameState.nickname}</strong>! Kamu meraih poin penuh (+${earnedPts} Poin)!`
+        );
+        fbTitle.textContent = `✨ Benar di Kesempatan Ke-1! (+${earnedPts} Poin Penuh)`;
+      } else {
+        setKikoDialog(
+          'kiko-quiz-avatar',
+          'kiko-quiz-speech',
+          'celebrate',
+          `Bagus sekali, <strong>Agen ${gameState.nickname}</strong>! Jawabanmu benar di kesempatan kedua dan mendapat +${earnedPts} Poin!`
+        );
+        fbTitle.textContent = `✅ Benar di Kesempatan Ke-2! (+${earnedPts} Poin)`;
+      }
+
+      fbBox.className = 'feedback-3d show success';
+      fbDesc.textContent = q.explanation;
+      fbHint.style.display = 'none';
+      btnRetry.style.display = 'none';
+      btnNext.style.display = 'inline-flex';
+    } else if (gameState.attemptsUsed === 1) {
+      if (!silentRestore) {
+        playSFX('wrong');
+        setTimeout(() => playSFX('hint'), 320);
+      }
+      mainCard.classList.add('shake-anim');
+      if (q.type !== 'ordering' && gameState.selectedOption !== null && document.getElementById(`opt-3d-${gameState.selectedOption}`)) {
+        document.getElementById(`opt-3d-${gameState.selectedOption}`).classList.add('wrong-ans');
+      }
+      const secondTryPts = Math.ceil(q.weight / 2);
+      setKikoDialog(
+        'kiko-quiz-avatar',
+        'kiko-quiz-speech',
+        'hint',
+        `Hmm, hampir tepat! Baca petunjukku di bawah ya. Jika benar di kesempatan ke-2, kamu masih mendapat <strong>+${secondTryPts} Poin</strong>!`
+      );
+      fbBox.className = 'feedback-3d show warning';
+      fbTitle.textContent = `🤔 Belum Tepat (Masih Ada Kesempatan Ke-2 untuk +${secondTryPts} Poin)`;
+      fbDesc.textContent = 'Jangan menyerah! Perhatikan petunjuk Kiko berikut sebelum mencoba lagi:';
+      fbHint.style.display = 'block';
+      fbHint.textContent = `💡 Petunjuk Kiko: "${q.hint}"`;
+      btnRetry.style.display = 'inline-flex';
+      btnNext.style.display = 'none';
+    } else {
+      if (!silentRestore) playSFX('wrong');
+      mainCard.classList.add('shake-anim');
+      if (q.type !== 'ordering') {
+        if (gameState.selectedOption !== null && document.getElementById(`opt-3d-${gameState.selectedOption}`)) {
+          document.getElementById(`opt-3d-${gameState.selectedOption}`).classList.add('wrong-ans');
+        }
+        if (document.getElementById(`opt-3d-${q.correctAnswer}`)) {
+          document.getElementById(`opt-3d-${q.correctAnswer}`).classList.add('correct-ans');
+        }
+      } else {
+        gameState.currentOrderState = q.items.map((_, i) => i);
+        renderOrderingCards(q);
+      }
+      setKikoDialog(
+        'kiko-quiz-avatar',
+        'kiko-quiz-speech',
+        'thinking',
+        `Kedua kesempatan menjawab sudah habis (0 Poin). Tidak apa-apa, Agen! Yuk pelajari penjelasan yang benar di bawah ini.`
+      );
+      fbBox.className = 'feedback-3d show error';
+      fbTitle.textContent = '❌ Kesempatan Habis (0 Poin)';
+      const rightText = q.type === 'ordering'
+        ? 'Urutan yang benar telah disusun pada kartu di atas.'
+        : `Jawaban yang benar: "${q.options[q.correctAnswer]}"`;
+      fbDesc.innerHTML = `<strong>${rightText}</strong><br/>${q.explanation}`;
+      fbHint.style.display = 'none';
+      btnRetry.style.display = 'none';
+      btnNext.style.display = 'inline-flex';
+    }
+  }
+
+  function retryCurrentQuestion() {
+    playSFX('click');
+    const mId = gameState.activeMissionId;
+    const q = MISSIONS_DATA.find(x => x.id === mId).questions[gameState.currentQuestionIndex];
+
+    gameState.questionAnswered = false;
+    gameState.selectedOption = null;
+    saveStateToStorage();
+
+    if (q.type === 'ordering') {
+      renderOrderingCards(q);
+      document.getElementById('btn-submit-answer').disabled = false;
+    } else {
+      document.querySelectorAll('.option-3d').forEach(b => {
+        b.disabled = false;
+        b.classList.remove('selected', 'wrong-ans', 'correct-ans');
+      });
+      document.getElementById('btn-submit-answer').disabled = true;
+    }
+
+    document.getElementById('quiz-attempt-pill').textContent = `Kesempatan: 1/2`;
+    document.getElementById('btn-submit-answer').style.display = 'inline-flex';
+    document.getElementById('feedback-box').className = 'feedback-3d';
+  }
+
+  function goToNextQuestion() {
+    if (!gameState.questionAnswered) return;
+    playSFX('click');
+
+    const mId = gameState.activeMissionId;
+    const totalQuestionsInMission = mId === 'final'
+      ? FINAL_CHALLENGE_DATA.decisions.length
+      : MISSIONS_DATA.find(x => x.id === mId).questions.length;
+
+    gameState.currentQuestionIndex++;
+
+    if (gameState.currentQuestionIndex < totalQuestionsInMission) {
+      renderActiveQuestion(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      finishCurrentMission();
+    }
+  }
+
+  /********************************************************************
+   * 10. PENYELESAIAN MISI, KUNCI SKOR AKHIR, & SINKRONISASI SHEETS
+   ********************************************************************/
+  function getMissionTierLabel(pct) {
+    if (pct >= 86) return 'Gold 🥇';
+    if (pct >= 60) return 'Silver 🥈';
+    return 'Bronze 🥉';
+  }
+
+  function finishCurrentMission() {
+    const mId = gameState.activeMissionId;
+    const isFinal = mId === 'final';
+    const mObj = isFinal ? FINAL_CHALLENGE_DATA : MISSIONS_DATA.find(x => x.id === mId);
+
+    const pts = gameState.tempMissionPoints;
+    const maxPts = Math.max(1, gameState.tempMissionMax);
+    const pct = Math.round((pts / maxPts) * 100);
+    const tier = getMissionTierLabel(pct);
+
+    gameState.completedMissions[mId] = {
+      scorePoints: pts,
+      maxPoints: maxPts,
+      pct: pct,
+      badgeTier: tier
+    };
+
+    const curIdx = isFinal ? 5 : mObj.number - 1;
+    if (gameState.unlockedMissionIndex === curIdx && curIdx < 5) {
+      gameState.unlockedMissionIndex = curIdx + 1;
+    }
+
+    if (isFinal && !gameState.sessionEndTime) {
+      gameState.sessionEndTime = Date.now();
+    }
+
+    saveStateToStorage();
+    playSFX('missionWin');
+    spawnConfettiBurst(65);
+    restoreCelebrationScreen();
+  }
+
+  function restoreCelebrationScreen() {
+    const mId = gameState.activeMissionId;
+    const isFinal = mId === 'final';
+    const mObj = isFinal ? FINAL_CHALLENGE_DATA : MISSIONS_DATA.find(x => x.id === mId);
+    const rec = gameState.completedMissions[mId] || { pct: 0, scorePoints: 0, maxPoints: 15, badgeTier: 'Bronze 🥉' };
+
+    document.getElementById('kiko-celeb-avatar').innerHTML = getKiko3DSVG('celebrate');
+    document.getElementById('celeb-mission-title').textContent = `${mObj.name} Tuntas!`;
+    document.getElementById('celeb-badge-emoji').textContent = mObj.badgeIcon;
+    document.getElementById('celeb-badge-title').textContent = mObj.badgeName;
+    document.getElementById('celeb-badge-stats').textContent = `Skor Misi: ${rec.pct}% (${rec.scorePoints}/${rec.maxPoints} Poin) — Kategori ${rec.badgeTier}`;
+
+    if (isFinal) {
+      document.getElementById('celeb-kiko-praise').innerHTML =
+        `Luar biasa, <strong>Agen ${gameState.nickname}</strong>! Kamu telah menyelesaikan seluruh keputusan di Pusat Kendali AI Kota Digital.`;
+      document.getElementById('final-challenge-recap').style.display = 'block';
+      document.getElementById('btn-celeb-next').textContent = '🏆 Buka Papan Prestasi Akhir';
+    } else {
+      document.getElementById('celeb-kiko-praise').innerHTML =
+        `Kerja hebat, <strong>Agen ${gameState.nickname}</strong>! Zona <strong>${mObj.location}</strong> sudah aman dan lokasi misi berikutnya telah terbuka di Peta!`;
+      document.getElementById('final-challenge-recap').style.display = 'none';
+      document.getElementById('btn-celeb-next').textContent = '🗺️ Kembali ke Peta Kota Digital';
+    }
+
+    switchScreen('screen-celebration');
+  }
+
+  function handlePostCelebration() {
+    if (gameState.activeMissionId === 'final') {
+      showFinalScoreboard(false);
+    } else {
+      enterMapScreen();
+    }
+  }
+
+  function generateSealCode(name, score, durationSec) {
+    const clean = (name || 'AGEN').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5) || 'AGEN';
+    const checksum = ((score * 17) + durationSec + clean.charCodeAt(0)) % 900 + 100;
+    return `SEGEL-RESMI: #${clean}-${score}-${durationSec}S-${checksum}`;
+  }
+
+  function showFinalScoreboard(isRestoring = false) {
+    if (!isRestoring) {
+      playSFX('grandWin');
+      spawnConfettiBurst(90);
+    }
+
+    if (!gameState.sessionEndTime) {
+      gameState.sessionEndTime = Date.now();
+    }
+
+    let earnedTotal = 0;
+    let maxTotal = 0;
+
+    const listEl = document.getElementById('res-missions-list');
+    listEl.innerHTML = '';
+
+    const allStages = [...MISSIONS_DATA, FINAL_CHALLENGE_DATA];
+    allStages.forEach(st => {
+      const rec = gameState.completedMissions[st.id] || { scorePoints: 0, maxPoints: 15, pct: 0, badgeTier: 'Bronze 🥉' };
+      earnedTotal += rec.scorePoints;
+      maxTotal += rec.maxPoints;
+
+      const row = document.createElement('div');
+      row.className = 'summary-row-3d';
+      row.innerHTML = `
+        <div>
+          <div style="font-weight:900; font-size:0.86rem; color:#0f172a;">${st.icon} ${st.location}</div>
+          <div style="font-size:0.74rem; color:#475569; font-weight:700;">${st.badgeIcon} ${st.badgeName}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:900; font-size:0.95rem; color:#0284c7;">${rec.pct}%</div>
+          <div style="font-size:0.7rem; color:#64748b;">${rec.scorePoints}/${rec.maxPoints} Poin</div>
+        </div>
+      `;
+      listEl.appendChild(row);
+    });
+
+    const safeMax = Math.max(1, maxTotal);
+    const finalScore = Math.round((earnedTotal / safeMax) * 100);
+
+    let predicate = 'Perlu Berlatih';
+    let predBg = '#fbbf24';
+    if (finalScore >= 86) {
+      predicate = 'Sangat Baik';
+      predBg = '#10b981';
+    } else if (finalScore >= 76) {
+      predicate = 'Baik';
+      predBg = '#38bdf8';
+    } else if (finalScore >= 61) {
+      predicate = 'Cukup';
+      predBg = '#facc15';
+    }
+
+    let medal = '🥉';
+    let tierText = 'LENCANA BRONZE';
+    if (finalScore >= 86) {
+      medal = '🥇';
+      tierText = 'LENCANA GOLD';
+    } else if (finalScore >= 76) {
+      medal = '🥈';
+      tierText = 'LENCANA SILVER';
+    }
+
+    document.getElementById('res-medal-icon').textContent = medal;
+    document.getElementById('res-tier-title').textContent = tierText;
+    document.getElementById('res-total-score').textContent = finalScore;
+
+    const predEl = document.getElementById('res-predicate-badge');
+    predEl.textContent = `Predikat: ${predicate}`;
+    predEl.style.background = predBg;
+
+    document.getElementById('res-greeting-line').innerHTML =
+      `Selamat, <strong>Agen ${gameState.nickname}</strong>! Hasil percobaan pertamamu telah dikunci secara resmi.`;
+    document.getElementById('res-formula-detail').textContent =
+      `Perhitungan: (${earnedTotal} poin diperoleh ÷ ${safeMax} poin maksimal) × 100 = ${finalScore}`;
+
+    const startMs = gameState.sessionStartTime || (gameState.sessionEndTime - 300000);
+    const endMs = gameState.sessionEndTime;
+    const diffSec = Math.max(10, Math.round((endMs - startMs) / 1000));
+    const mins = Math.floor(diffSec / 60);
+    const secs = diffSec % 60;
+    const startStr = new Date(startMs).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const endStr = new Date(endMs).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const sealCode = generateSealCode(gameState.nickname, finalScore, diffSec);
+
+    document.getElementById('audit-time-info').textContent =
+      `🕒 Mulai: ${startStr} | Selesai: ${endStr} | Durasi: ${mins}m ${secs}d`;
+    document.getElementById('audit-seal-code').textContent = sealCode;
+
+    setKikoDialog(
+      'kiko-res-avatar',
+      'kiko-res-speech',
+      'celebrate',
+      `Terima kasih telah menjaga Kota Digital, <strong>Agen ${gameState.nickname}</strong>! Ingat selalu: <em>"Teknologi itu hebat, tetapi keputusan yang bijak tetap membutuhkan manusia!"</em>`
+    );
+
+    switchScreen('screen-results');
+    syncScoreToGoogleSheets(false);
+  }
+
+  /********************************************************************
+   * 11. PENGIRIMAN KE GOOGLE SHEETS + ANTREAN OFFLINE OTOMATIS (CARA 1)
+   ********************************************************************/
+  async function syncScoreToGoogleSheets(isManualClick = false) {
+    const badge = document.getElementById('sheets-status-badge');
+    const retryBtn = document.getElementById('btn-retry-sync');
+
+    if (gameState.sheetSynced) {
+      badge.className = 'sync-status-pill sync-success';
+      badge.innerHTML = '✅ Nilai Pertama Berhasil Masuk ke Google Sheets Guru!';
+      retryBtn.style.display = 'none';
+      return;
+    }
+
+    if (!GOOGLE_SHEETS_WEBAPP_URL || GOOGLE_SHEETS_WEBAPP_URL.includes("TEMPEL_URL")) {
+      badge.className = 'sync-status-pill sync-pending';
+      badge.innerHTML = 'ℹ️ Mode Lokal Aktif (Nilai Terkunci Aman di HP — Siap di-Screenshot)';
+      retryBtn.style.display = 'none';
+      return;
+    }
+
+    if (!navigator.onLine) {
+      badge.className = 'sync-status-pill sync-pending';
+      badge.innerHTML = '⚠️ Sinyal Offline: Nilai sudah dikunci aman di HP. Tekan tombol di bawah saat sudah dapat sinyal!';
+      retryBtn.style.display = 'inline-flex';
+      return;
+    }
+
+    badge.className = 'sync-status-pill sync-pending';
+    badge.innerHTML = '⏳ Sedang mengirim nilai ke Google Sheets Guru...';
+    retryBtn.style.display = 'none';
+
+    const finalScore = parseInt(document.getElementById('res-total-score').textContent, 10) || 0;
+    const predText = document.getElementById('res-predicate-badge').textContent.replace('Predikat: ', '');
+    const sealCode = document.getElementById('audit-seal-code').textContent;
+    const timeInfo = document.getElementById('audit-time-info').textContent;
+
+    const payload = {
+      timestamp: new Date(gameState.sessionEndTime || Date.now()).toLocaleString('id-ID'),
+      attemptLabel: "Percobaan Ke-" + (gameState.attemptNumber || 1),
+      nickname: gameState.nickname,
+      finalScore: finalScore,
+      predicate: predText,
+      m1: (gameState.completedMissions['m1']?.pct || 0) + '%',
+      m2: (gameState.completedMissions['m2']?.pct || 0) + '%',
+      m3: (gameState.completedMissions['m3']?.pct || 0) + '%',
+      m4: (gameState.completedMissions['m4']?.pct || 0) + '%',
+      m5: (gameState.completedMissions['m5']?.pct || 0) + '%',
+      finalChallenge: (gameState.completedMissions['final']?.pct || 0) + '%',
+      durationInfo: timeInfo,
+      sealCode: sealCode
+    };
+
+    try {
+      await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+
+      gameState.sheetSynced = true;
+      saveStateToStorage();
+      if (isManualClick) playSFX('correct');
+
+      badge.className = 'sync-status-pill sync-success';
+      badge.innerHTML = '✅ Nilai Pertama Berhasil Masuk ke Google Sheets Guru!';
+      retryBtn.style.display = 'none';
+    } catch (err) {
+      badge.className = 'sync-status-pill sync-pending';
+      badge.innerHTML = '⚠️ Gagal Terkirim (Sinyal Lemah). Nilai tetap aman, tekan tombol di bawah saat sinyal stabil!';
+      retryBtn.style.display = 'inline-flex';
+    }
+  }
+
+  window.addEventListener('online', () => {
+    if (gameState.completedMissions['final'] && !gameState.sheetSynced) {
+      syncScoreToGoogleSheets(false);
+    }
+  });
+
+  /********************************************************************
+   * 12. FITUR RESET RAHASIA KHUSUS GURU (KETUK JUDUL KIRI ATAS 5 KALI)
+   ********************************************************************/
+  let secretTapCount = 0;
+  let secretTapTimer = null;
+
+  function handleSecretTeacherTap() {
+    secretTapCount++;
+    if (secretTapTimer) clearTimeout(secretTapTimer);
+    secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 1800);
+
+    if (secretTapCount >= 5) {
+      secretTapCount = 0;
+      const pin = prompt('🔐 MODE KHUSUS GURU:\nKetik "GURU" untuk mereset data sesi yang terkunci di perangkat ini:');
+      if (pin && pin.trim().toUpperCase() === 'GURU') {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    }
+  }
+
+  window.onload = initGame;
+  // PASTE KODE INI DI BAGIAN PALING BAWAH SCRIPT SEBELUM
+
+  function openReplayConfirmation() {
+    playSFX('click');
+    document.getElementById('replay-confirm-modal').style.display = 'flex';
+  }
+
+  function closeReplayModal(e) {
+    if (e && e.target && e.target.id !== 'replay-confirm-modal') return;
+    document.getElementById('replay-confirm-modal').style.display = 'none';
+  }
+
+  function executeHardReset() {
+    playSFX('click');
+    
+    // Hitung jumlah percobaan yang sudah dilakukan siswa ini sebelumnya
+    let historyCount = 0;
+    try {
+      const oldSave = localStorage.getItem(STORAGE_KEY);
+      if (oldSave) {
+        const parsed = JSON.parse(oldSave);
+        historyCount = (parsed.attemptNumber || 1);
+      }
+    } catch (e) {}
+
+    // Hapus data sesi aktif saat ini, tapi simpan increment percobaan berikutnya
+    localStorage.removeItem(STORAGE_KEY);
+    
+    // Buat state bersih untuk sesi baru dengan nomor percobaan bertambah (misal: Percobaan Ke-2)
+    gameState = {
+      nickname: '',
+      currentScreen: 'screen-opening',
+      sessionStartTime: null,
+      sessionEndTime: null,
+      unlockedMissionIndex: 0,
+      completedMissions: {},
+      activeMissionId: null,
+      currentQuestionIndex: 0,
+      attemptsUsed: 0,
+      selectedOption: null,
+      currentOrderState: [],
+      questionAnswered: false,
+      lastAnswerWasCorrect: false,
+      lastEarnedPoints: 0,
+      tempMissionPoints: 0,
+      tempMissionMax: 0,
+      sheetSynced: false,
+      attemptNumber: historyCount + 1 // Penanda percobaan ke berapa di Sheets guru
+    };
+
+    location.reload(); // Muat ulang halaman agar bersih dari awal
+  }
+
+  // UPDATE JUGA sedikit pada payload fungsi syncScoreToGoogleSheets agar mengirim label percobaan:
+  // Cari fungsi syncScoreToGoogleSheets(isManualClick), pastikan objek 'payload' di dalamnya ditambahi baris ini:
+  // attemptLabel: "Percobaan Ke-" + (gameState.attemptNumber || 1)
+</script>
+</body>
+</html>
